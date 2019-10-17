@@ -48,7 +48,7 @@ type bookService struct {
 	repo    BookRepository
 }
 
-func NewBookService(storage BookStorage, repo BookRepository) BookService {
+func NewBookService(storage BookSave, repo BookRepository) BookService {
 	return &bookService{
 		storage: storage,
 		repo:    repo,
