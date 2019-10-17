@@ -16,17 +16,23 @@ func main() {
 
 func NewApp() *fx.App {
 
-	config := NewConfig
+	config := LoadConfig()
 	providers := []interface{}{
-		config,
+		config.LoadBucketConfig,
 		NewBookService,
+		NewBucketBookStorage,
 		NewMux,
 	}
 
 	//TODO db type enum
-	switch config().DatabaseType {
+	switch config.DatabaseType {
 	case "sqlite":
+		providers = append(providers, config.LoadSQLiteDatabaseConfig)
 		providers = append(providers, NewSQLiteDatabase)
+	case "postgres":
+		providers = append(providers, config.LoadPostgresDatabaseConfig)
+		providers = append(providers, NewPostgresDatabase)
+		providers = append(providers, NewPostgresBookRepository)
 	}
 	return fx.New(
 		fx.Provide(

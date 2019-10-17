@@ -17,14 +17,14 @@ var (
 )
 
 type Book struct {
-	ID string
+	ID          string
 	DisplayName string
-	Name string
-	Path string
-	Type string
+	Name        string
+	Path        string
+	Type        string
 	Description string
-	Created time.Time
-	Modified time.Time
+	Created     time.Time
+	Modified    time.Time
 }
 
 type BookService interface {
@@ -33,21 +33,25 @@ type BookService interface {
 	Add(ctx context.Context, file multipart.File, book *Book) error
 }
 
-type BookRepository interface{
+type BookRepository interface {
 	FindAll(ctx context.Context) ([]*Book, error)
 	FindByID(ctx context.Context, id string) (*Book, error)
 	Insert(ctx context.Context, book *Book) error
 }
 
+func NewPostgresBookRepository(database *PostgresDatabase) BookRepository {
+	return database
+}
+
 type bookService struct {
-	storage BookStorage
-	repo BookRepository
+	storage BookSave
+	repo    BookRepository
 }
 
 func NewBookService(storage BookStorage, repo BookRepository) BookService {
 	return &bookService{
 		storage: storage,
-		repo: repo,
+		repo:    repo,
 	}
 }
 
@@ -73,7 +77,7 @@ func (s *bookService) Add(ctx context.Context, file multipart.File, book *Book) 
 	if !isBook(file) {
 		return ErrInvalidFileType
 	}
-	path, err := s.storage.Save(ctx, file)
+	path, err := s.storage.Save(ctx, book.Name, file)
 	if err != nil {
 		logrus.WithError(err).Error("unable to write to storage")
 		return errors.Wrap(err, "failed to write to storage")
@@ -103,7 +107,6 @@ func isBook(file multipart.File) bool {
 	}
 
 	file.Seek(0, io.SeekStart)
-
 
 	if kind, err := filetype.Match(head); err != nil {
 		logrus.WithError(err).Error("unable to determine file type")

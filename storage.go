@@ -9,7 +9,7 @@ import (
 )
 
 type BookSave interface {
-	Save(ctx context.Context, reader io.Reader) (string, error)
+	Save(ctx context.Context, fileName string, reader io.Reader) (path string, err error)
 }
 
 type BookGet interface {
@@ -22,13 +22,21 @@ type BookStorage interface {
 }
 
 type BucketStorage struct {
-	Bucket blob.Bucket
+	Bucket *blob.Bucket
 }
 
-func NewBucketStorage(bucket blob.Bucket) BucketStorage {
-	return BucketStorage{
-		Bucket:bucket,
+func NewBucketStorage(config BucketConfig) BucketStorage {
+	bucket, err := blob.OpenBucket(context.Background(), config.ConnectionString)
+	if err != nil {
+		logrus.WithError(err).Fatal("unable to connect to bucket")
 	}
+	return BucketStorage{
+		Bucket: bucket,
+	}
+}
+
+func NewBucketBookStorage(storage *BucketStorage) BookSave {
+	return storage
 }
 
 func (s *BucketStorage) Save(ctx context.Context, fileName string, reader io.Reader) (path string, err error) {
@@ -43,7 +51,7 @@ func (s *BucketStorage) Save(ctx context.Context, fileName string, reader io.Rea
 
 	if _, err := io.Copy(w, reader); err != nil {
 		logrus.WithError(err).Error("failed to upload file")
-		return "",errors.Wrap(err, "failed to upload file")
+		return "", errors.Wrap(err, "failed to upload file")
 	}
 
 	return "", err

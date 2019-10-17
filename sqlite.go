@@ -84,7 +84,6 @@ func (r *SQLiteDatabase) Insert(ctx context.Context, book *Book) error {
 
 	defer r.pool.Put(conn)
 
-
 	stmt := conn.Prep("INSERT INTO books VALUES($id, $displayName, $name, $path, $type, $description, $created, $modified);")
 	stmt.SetText("$id", book.ID)
 	stmt.SetText("$displayName", book.DisplayName)
