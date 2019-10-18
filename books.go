@@ -16,27 +16,27 @@ var (
 	ErrInvalidFileType = errors.New("invalid file type")
 )
 
-type Book struct {
-	ID          string
-	DisplayName string
-	Name        string
-	Path        string
-	Type        string
-	Description string
-	Created     time.Time
-	Modified    time.Time
+type Document struct {
+	ID          string    `json:"id"`
+	DisplayName string    `json:"display_name"`
+	Name        string    `json:"name"`
+	Path        string    `json:"path"`
+	Type        string    `json:"type"`
+	Description string    `json"description"`
+	Created     time.Time `json:"created"`
+	Updated    time.Time `json:"updated"`
 }
 
 type BookService interface {
-	GetAll(ctx context.Context) ([]*Book, error)
-	GetByID(ctx context.Context, id string) (*Book, error)
-	Add(ctx context.Context, file multipart.File, book *Book) error
+	GetAll(ctx context.Context) ([]*Document, error)
+	GetByID(ctx context.Context, id string) (*Document, error)
+	Add(ctx context.Context, file multipart.File, book *Document) error
 }
 
 type BookRepository interface {
-	FindAll(ctx context.Context) ([]*Book, error)
-	FindByID(ctx context.Context, id string) (*Book, error)
-	Insert(ctx context.Context, book *Book) error
+	FindAll(ctx context.Context) ([]*Document, error)
+	FindByID(ctx context.Context, id string) (*Document, error)
+	Insert(ctx context.Context, book *Document) error
 }
 
 func NewPostgresBookRepository(database *PostgresDatabase) BookRepository {
@@ -55,7 +55,7 @@ func NewBookService(storage BookSave, repo BookRepository) BookService {
 	}
 }
 
-func (s *bookService) GetAll(ctx context.Context) ([]*Book, error) {
+func (s *bookService) GetAll(ctx context.Context) ([]*Document, error) {
 	entities, err := s.repo.FindAll(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch books from repository")
@@ -64,7 +64,7 @@ func (s *bookService) GetAll(ctx context.Context) ([]*Book, error) {
 	return entities, nil
 }
 
-func (s *bookService) GetByID(ctx context.Context, id string) (*Book, error) {
+func (s *bookService) GetByID(ctx context.Context, id string) (*Document, error) {
 	entity, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		logrus.WithError(err).WithField("id", id).Error("unable to fetch book from repository")
@@ -73,7 +73,7 @@ func (s *bookService) GetByID(ctx context.Context, id string) (*Book, error) {
 	return entity, nil
 }
 
-func (s *bookService) Add(ctx context.Context, file multipart.File, book *Book) error {
+func (s *bookService) Add(ctx context.Context, file multipart.File, book *Document) error {
 	if !isBook(file) {
 		return ErrInvalidFileType
 	}
@@ -86,7 +86,8 @@ func (s *bookService) Add(ctx context.Context, file multipart.File, book *Book) 
 	book.ID = uuid.New().String()
 	book.Path = path
 	book.Created = time.Now()
-	book.Modified = time.Now()
+	book.Updated = time.Now()
+	book.Type = "book"
 
 	if err := s.repo.Insert(ctx, book); err != nil {
 		logrus.WithError(err).Error("unable to save to repo")

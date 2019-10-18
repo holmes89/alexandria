@@ -10,7 +10,7 @@ import (
 )
 
 func MakeBookHandler(mr *mux.Router, service BookService) http.Handler {
-	r := mr.PathPrefix("books").Subrouter()
+	r := mr.PathPrefix("/books").Subrouter()
 
 	h := &bookHandler{
 		service: service,
@@ -81,7 +81,7 @@ func (h *bookHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	book := &Book{
+	book := &Document{
 		DisplayName: displayName[0],
 		Name:        fileHeader.Filename,
 		Type:        "book",

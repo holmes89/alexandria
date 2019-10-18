@@ -19,8 +19,9 @@ func NewApp() *fx.App {
 	config := LoadConfig()
 	providers := []interface{}{
 		config.LoadBucketConfig,
-		NewBookService,
+		NewBucketStorage,
 		NewBucketBookStorage,
+		NewBookService,
 		NewMux,
 	}
 

@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gocloud.dev/blob"
+	_ "gocloud.dev/blob/s3blob"
 	"io"
 )
 
@@ -25,12 +26,12 @@ type BucketStorage struct {
 	Bucket *blob.Bucket
 }
 
-func NewBucketStorage(config BucketConfig) BucketStorage {
+func NewBucketStorage(config BucketConfig) *BucketStorage {
 	bucket, err := blob.OpenBucket(context.Background(), config.ConnectionString)
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to connect to bucket")
 	}
-	return BucketStorage{
+	return &BucketStorage{
 		Bucket: bucket,
 	}
 }

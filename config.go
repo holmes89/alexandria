@@ -8,9 +8,9 @@ import (
 )
 
 type Config struct {
-	DatabaseType   string
-	SQLiteConfig   SQLiteDatabaseConfig
-	PostgresConfig PostgresDatabaseConfig
+	DatabaseType           string
+	SQLiteConfig           SQLiteDatabaseConfig
+	PostgresConfig         PostgresDatabaseConfig
 	BucketConnectionConfig BucketConfig
 }
 

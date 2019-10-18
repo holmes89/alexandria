@@ -25,7 +25,7 @@ func NewSQLiteDatabase(config SQLiteDatabaseConfig) *SQLiteDatabase {
 	}
 }
 
-func (r *SQLiteDatabase) FindAll(ctx context.Context) (books []*Book, err error) {
+func (r *SQLiteDatabase) FindAll(ctx context.Context) (books []*Document, err error) {
 	conn := r.pool.Get(ctx.Done())
 	if conn == nil {
 		logrus.Error("no connections available in pool")
@@ -50,7 +50,7 @@ func (r *SQLiteDatabase) FindAll(ctx context.Context) (books []*Book, err error)
 	return books, nil
 }
 
-func (r *SQLiteDatabase) FindByID(ctx context.Context, id string) (*Book, error) {
+func (r *SQLiteDatabase) FindByID(ctx context.Context, id string) (*Document, error) {
 	conn := r.pool.Get(ctx.Done())
 	if conn == nil {
 		logrus.Error("no connections available in pool")
@@ -62,7 +62,7 @@ func (r *SQLiteDatabase) FindByID(ctx context.Context, id string) (*Book, error)
 	stmt := conn.Prep("SELECT * FROM books where id = $id;")
 	stmt.SetText("$id", id)
 
-	var book *Book
+	var book *Document
 	for {
 		if hasRow, err := stmt.Step(); err != nil {
 			logrus.WithField("err", err.Error()).Error("statement creation failed")
@@ -75,7 +75,7 @@ func (r *SQLiteDatabase) FindByID(ctx context.Context, id string) (*Book, error)
 	return book, nil
 }
 
-func (r *SQLiteDatabase) Insert(ctx context.Context, book *Book) error {
+func (r *SQLiteDatabase) Insert(ctx context.Context, book *Document) error {
 	conn := r.pool.Get(ctx.Done())
 	if conn == nil {
 		logrus.Error("no connections available in pool")
@@ -84,7 +84,7 @@ func (r *SQLiteDatabase) Insert(ctx context.Context, book *Book) error {
 
 	defer r.pool.Put(conn)
 
-	stmt := conn.Prep("INSERT INTO books VALUES($id, $displayName, $name, $path, $type, $description, $created, $modified);")
+	stmt := conn.Prep("INSERT INTO books VALUES($id, $displayName, $name, $path, $type, $description, $created, $updated);")
 	stmt.SetText("$id", book.ID)
 	stmt.SetText("$displayName", book.DisplayName)
 	stmt.SetText("$name", book.Name)
@@ -92,7 +92,7 @@ func (r *SQLiteDatabase) Insert(ctx context.Context, book *Book) error {
 	stmt.SetText("$type", book.Type)
 	stmt.SetText("$description", book.Description)
 	stmt.SetText("$created", book.Created.Format(time.RFC3339))
-	stmt.SetText("$modified", book.Modified.Format(time.RFC3339))
+	stmt.SetText("$updated", book.Updated.Format(time.RFC3339))
 
 	if _, err := stmt.Step(); err != nil {
 		logrus.WithError(err).Error("unable to create book")
@@ -102,18 +102,18 @@ func (r *SQLiteDatabase) Insert(ctx context.Context, book *Book) error {
 	return nil
 }
 
-func (r *SQLiteDatabase) bookFromStatement(stmt *sqlite.Stmt) *Book {
+func (r *SQLiteDatabase) bookFromStatement(stmt *sqlite.Stmt) *Document {
 	created, err := time.Parse(time.RFC3339, stmt.GetText("created"))
 	if err != nil {
 		logrus.WithError(err).Warn("unable to parse date")
 		created = time.Time{}
 	}
-	mod, err := time.Parse(time.RFC3339, stmt.GetText("modified"))
+	mod, err := time.Parse(time.RFC3339, stmt.GetText("updated"))
 	if err != nil {
 		logrus.WithError(err).Warn("unable to parse date")
 		mod = time.Time{}
 	}
-	return &Book{
+	return &Document{
 		ID:          stmt.GetText("id"),
 		DisplayName: stmt.GetText("display_name"),
 		Name:        stmt.GetText("name"),
@@ -121,6 +121,6 @@ func (r *SQLiteDatabase) bookFromStatement(stmt *sqlite.Stmt) *Book {
 		Type:        stmt.GetText("type"),
 		Description: stmt.GetText("description"),
 		Created:     created,
-		Modified:    mod,
+		Updated:    mod,
 	}
 }
