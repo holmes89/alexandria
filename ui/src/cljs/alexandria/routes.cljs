@@ -28,6 +28,10 @@
   (defroute "/about" []
     (re-frame/dispatch [::events/set-active-panel :about-panel]))
 
+  (defroute "/books" []
+    (re-frame/dispatch [::events/get-documents])
+    (re-frame/dispatch [::events/set-active-panel :book-panel]))
+
 
   ;; --------------------
   (hook-browser-navigation!))

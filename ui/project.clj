@@ -4,6 +4,8 @@
                   :exclusions [com.google.javascript/closure-compiler-unshaded
                                org.clojure/google-closure-library]]
                  [thheller/shadow-cljs "2.8.65"]
+                 [cljs-ajax "0.8.0"]
+                 [day8.re-frame/http-fx "0.1.6"]
                  [reagent "0.8.1"]
                  [re-frame "0.10.9"]
                  [secretary "1.2.3"]]

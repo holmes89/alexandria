@@ -1,4 +1,5 @@
 (ns alexandria.db)
 
 (def default-db
-  {:name "re-frame"})
+  {:name "re-frame"
+   :book-data []})

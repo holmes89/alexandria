@@ -121,6 +121,6 @@ func (r *SQLiteDatabase) bookFromStatement(stmt *sqlite.Stmt) *Document {
 		Type:        stmt.GetText("type"),
 		Description: stmt.GetText("description"),
 		Created:     created,
-		Updated:    mod,
+		Updated:     &mod,
 	}
 }

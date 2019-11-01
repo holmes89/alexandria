@@ -17,14 +17,14 @@ var (
 )
 
 type Document struct {
-	ID          string    `json:"id"`
-	DisplayName string    `json:"display_name"`
-	Name        string    `json:"name"`
-	Path        string    `json:"path"`
-	Type        string    `json:"type"`
-	Description string    `json"description"`
-	Created     time.Time `json:"created"`
-	Updated    time.Time `json:"updated"`
+	ID          string     `json:"id"`
+	DisplayName string     `json:"display_name"`
+	Name        string     `json:"name"`
+	Path        string     `json:"path"`
+	Type        string     `json:"type"`
+	Description string     `json:"description"`
+	Created     time.Time  `json:"created"`
+	Updated     *time.Time `json:"updated"`
 }
 
 type BookService interface {
@@ -85,8 +85,9 @@ func (s *bookService) Add(ctx context.Context, file multipart.File, book *Docume
 
 	book.ID = uuid.New().String()
 	book.Path = path
-	book.Created = time.Now()
-	book.Updated = time.Now()
+	t := time.Now()
+	book.Created = t
+	book.Updated = &t
 	book.Type = "book"
 
 	if err := s.repo.Insert(ctx, book); err != nil {

@@ -1,2 +1,4 @@
 .idea
 env.sh
+node_modules
+.shadow-cljs

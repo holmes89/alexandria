@@ -28,6 +28,32 @@
     [:a {:href "#/"}
      "go to Home Page"]]])
 
+;; books
+
+(defn book-item
+  [{:keys [id display_name]}]
+  [:tr
+   [:td [:a {:href (str "#/book/" id)} display_name]]])
+
+(defn book-list []
+  (let [books @(re-frame/subscribe [::subs/books])]
+    (fn []
+      [:div
+       [:table.table.is-striped
+        [:thead
+         [:tr
+          [:td "Name"]]]
+        [:tbody 
+         (for [book books]
+           ^{:key (:id book)}[book-item book])]]])))
+
+
+(defn book-panel []
+  (fn []
+    [:div
+     [:h1 "This is the books Page."]
+     [:div
+      [book-list]]]))
 
 ;; main
 
@@ -35,6 +61,7 @@
   (case panel-name
     :home-panel [home-panel]
     :about-panel [about-panel]
+    :book-panel [book-panel]
     [:div]))
 
 (defn show-panel [panel-name]

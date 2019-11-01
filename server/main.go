@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/fx"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -46,25 +51,29 @@ func NewApp() *fx.App {
 func NewMux(lc fx.Lifecycle) *mux.Router {
 	logrus.Info("creating mux")
 
-	mux := mux.NewRouter()
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-	}
+	//secureMiddleware := secure.New(secure.Options{
+	//	AllowedHosts:          []string{"localhost:8080"},
+	//	AllowedHostsAreRegex:  true,
+	//	SSLRedirect:           false,
+	//	STSSeconds:            31536000,
+	//})
+	router := mux.NewRouter()
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logrus.Info("starting server")
-			go server.ListenAndServe()
+			go http.ListenAndServe(":8080", handlers.CORS()(router))
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
 			logrus.Info("stopping server")
-			return server.Shutdown(ctx)
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, syscall.SIGINT)
+			return fmt.Errorf("%s", <-c)
 		},
 	})
 
-	return mux
+	return router
 }
 
 func NewLogger() *logrus.Logger {
