@@ -32,28 +32,24 @@
 
 (defn book-item
   [{:keys [id display_name]}]
-  [:tr
-   [:td [:a {:href (str "#/book/" id)} display_name]]])
+  [:a.panel-block {:href (str "#/book/" id)} display_name] )
 
 (defn book-list []
   (let [books @(re-frame/subscribe [::subs/books])]
     (fn []
-      [:div
-       [:table.table.is-striped
-        [:thead
-         [:tr
-          [:td "Name"]]]
-        [:tbody 
+      [:div.columns.is-mobile
+       [:div.column
+        [:nav.panel
+         [:p.panel-heading "Documents"]
          (for [book books]
            ^{:key (:id book)}[book-item book])]]])))
 
 
 (defn book-panel []
   (fn []
-    [:div
-     [:h1 "This is the books Page."]
-     [:div
-      [book-list]]]))
+    [:div.container
+     [:h1.main-title "Alexandria"]
+     [book-list]]))
 
 ;; main
 
