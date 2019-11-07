@@ -9,17 +9,17 @@ import (
 	"io"
 )
 
-type BookSave interface {
+type DocumentSave interface {
 	Save(ctx context.Context, fileName string, reader io.Reader) (path string, err error)
 }
 
-type BookGet interface {
+type DocumentGet interface {
 	Get(ctx context.Context, writer io.Writer) error
 }
 
-type BookStorage interface {
-	BookSave
-	BookGet
+type DocumentStorage interface {
+	DocumentSave
+	DocumentGet
 }
 
 type BucketStorage struct {
@@ -36,7 +36,7 @@ func NewBucketStorage(config BucketConfig) *BucketStorage {
 	}
 }
 
-func NewBucketBookStorage(storage *BucketStorage) BookSave {
+func NewBucketDocumentStorage(storage *BucketStorage) DocumentSave {
 	return storage
 }
 

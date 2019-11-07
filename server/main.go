@@ -16,7 +16,6 @@ import (
 func main() {
 	app := NewApp()
 	app.Run()
-	logrus.WithField("error", <-app.Done()).Error("terminated")
 }
 
 func NewApp() *fx.App {
@@ -25,8 +24,10 @@ func NewApp() *fx.App {
 	providers := []interface{}{
 		config.LoadBucketConfig,
 		NewBucketStorage,
-		NewBucketBookStorage,
+		NewBucketDocumentStorage,
+		NewDocumentService,
 		NewBookService,
+		NewPaperService,
 		NewMux,
 	}
 
@@ -38,14 +39,15 @@ func NewApp() *fx.App {
 	case "postgres":
 		providers = append(providers, config.LoadPostgresDatabaseConfig)
 		providers = append(providers, NewPostgresDatabase)
-		providers = append(providers, NewPostgresBookRepository)
+		providers = append(providers, NewPostgresDocumentRepository)
 	}
 	return fx.New(
 		fx.Provide(
 			providers...,
 		),
-		fx.Invoke(MakeBookHandler),
-		fx.Logger(NewLogger()),
+		fx.Invoke(MakeDocumentHandler,
+			MakeBookHandler,
+			MakePaperHandler),
 	)
 }
 func NewMux(lc fx.Lifecycle) *mux.Router {
@@ -74,8 +76,4 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 	})
 
 	return router
-}
-
-func NewLogger() *logrus.Logger {
-	return logrus.New()
 }

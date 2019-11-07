@@ -60,45 +60,46 @@ func retryPostgres(attempts int, sleep time.Duration, callback func() (*sql.DB, 
 	return nil, fmt.Errorf("after %d attempts, connection failed", attempts)
 }
 
-func (r *PostgresDatabase) FindAll(ctx context.Context) (books []*Document, err error) {
+func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*Document, err error) {
+	docs = []*Document{}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	rows, err := ps.Select("id", "description", "displayName", "name", "type", "path", "created", "updated").
-		From("documents").RunWith(r.conn).Query()
+		From("documents").Where(filter).RunWith(r.conn).Query()
 
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch results")
-		return nil, errors.Wrap(err, "uanble to fetch results")
+		return nil, errors.Wrap(err, "unable to fetch results")
 	}
 	for rows.Next() {
-		book := &Document{}
-		if err := rows.Scan(&book.ID, &book.Description, &book.DisplayName, &book.Name, &book.Type, &book.Path, &book.Created, &book.Updated); err != nil {
-			logrus.WithError(err).Warn("unable to scan book results")
+		doc := &Document{}
+		if err := rows.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
+			logrus.WithError(err).Warn("unable to scan doc results")
 		}
-		books = append(books, book)
+		docs = append(docs, doc)
 	}
-	return books, nil
+	return docs, nil
 }
 
 func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*Document, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	row := ps.Select("id", "description", "displayName", "name", "type", "path", "created", "updated").
 		From("documents").Where(sq.Eq{"id": id}).RunWith(r.conn).QueryRow()
-	book := &Document{}
-	if err := row.Scan(&book.ID, &book.Description, &book.DisplayName, &book.Name, &book.Type, &book.Path, &book.Created, &book.Updated); err != nil {
-		logrus.WithError(err).Warn("unable to scan book results")
+	doc := &Document{}
+	if err := row.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
+		logrus.WithError(err).Warn("unable to scan doc results")
 	}
 
-	return book, nil
+	return doc, nil
 }
 
-func (r *PostgresDatabase) Insert(ctx context.Context, book *Document) error {
+func (r *PostgresDatabase) Insert(ctx context.Context, doc *Document) error {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	if _, err := ps.Insert("documents").Columns("id", "description", "displayName", "name", "type", "path").
-		Values(book.ID, book.Description, book.DisplayName, book.Name, book.Type, book.Path).
+		Values(doc.ID, doc.Description, doc.DisplayName, doc.Name, doc.Type, doc.Path).
 		RunWith(r.conn).
 		Exec(); err != nil {
-		logrus.WithError(err).Warn("unable to insert book")
-		return errors.Wrap(err, "uanble to insert book metadata")
+		logrus.WithError(err).Warn("unable to insert doc")
+		return errors.Wrap(err, "unable to insert doc metadata")
 	}
 	return nil
 }
