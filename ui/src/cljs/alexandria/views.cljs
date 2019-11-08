@@ -2,7 +2,7 @@
   (:require
    [re-frame.core :as re-frame]
    [alexandria.subs :as subs]
-   ))
+   [alexandria.events :as events]))
 
 
 ;; home
@@ -19,10 +19,9 @@
 
 
 ;; about
-
 (defn about-panel []
   [:div
-   [:h1 "This is the About Page."]
+   [:h1 "This foo is the About Page."]
 
    [:div
     [:a {:href "#/"}
@@ -32,16 +31,17 @@
 
 (defn book-item
   [{:keys [id display_name]}]
-  [:a.panel-block {:href (str "#/book/" id)} display_name] )
+  [:a.panel-block {:href (str "#/books/" id)} display_name])
+
 
 (defn book-list []
-  (let [books @(re-frame/subscribe [::subs/books])]
+  (let [books (re-frame/subscribe [::subs/books])]
     (fn []
       [:div.columns.is-mobile
        [:div.column
         [:nav.panel
          [:p.panel-heading "Documents"]
-         (for [book books]
+         (for [book @books]
            ^{:key (:id book)}[book-item book])]]])))
 
 
@@ -56,7 +56,6 @@
 (defn- panels [panel-name]
   (case panel-name
     :home-panel [home-panel]
-    :about-panel [about-panel]
     :book-panel [book-panel]
     [:div]))
 
