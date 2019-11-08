@@ -10,53 +10,52 @@
 (defn home-panel []
   (let [name (re-frame/subscribe [::subs/name])]
     [:div
-     [:h1 (str "Hello from " @name ". This is the Home Page.")]
+     [:h1.main-title "Alexandria" ]
 
      [:div
-      [:a {:href "#/about"}
-       "go to About Page"]]
+      [:a {:href "#/documents"}
+       "documents"]]
      ]))
 
 
-;; about
-(defn about-panel []
-  [:div
-   [:h1 "This foo is the About Page."]
+;; docs
 
-   [:div
-    [:a {:href "#/"}
-     "go to Home Page"]]])
+(defn doc-icon
+  [type]
+  (if (= type "book")
+    [:i.fas.fa-book]
+    [:i.fas.fa-file-alt]))
 
-;; books
+(defn doc-item
+  [{:keys [id display_name type]}]
+  [:a.panel-block {:href (str "#/documents/" id)}
+   [:div.doc-info [doc-icon type]
+    display_name] ])
 
-(defn book-item
-  [{:keys [id display_name]}]
-  [:a.panel-block {:href (str "#/books/" id)} display_name])
 
-
-(defn book-list []
-  (let [books (re-frame/subscribe [::subs/books])]
+(defn doc-list []
+  (let [docs (re-frame/subscribe [::subs/docs])]
     (fn []
       [:div.columns.is-mobile
-       [:div.column
+       [:div.column.is-6.is-offset-3
         [:nav.panel
          [:p.panel-heading "Documents"]
-         (for [book @books]
-           ^{:key (:id book)}[book-item book])]]])))
+         (for [doc @docs]
+           ^{:key (:id doc)}[doc-item doc])]]])))
 
 
-(defn book-panel []
+(defn doc-panel []
   (fn []
     [:div.container
      [:h1.main-title "Alexandria"]
-     [book-list]]))
+     [doc-list]]))
 
 ;; main
 
 (defn- panels [panel-name]
   (case panel-name
     :home-panel [home-panel]
-    :book-panel [book-panel]
+    :doc-panel [doc-panel]
     [:div]))
 
 (defn show-panel [panel-name]

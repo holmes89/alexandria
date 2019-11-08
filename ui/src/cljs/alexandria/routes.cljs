@@ -6,8 +6,7 @@
    [secretary.core :as secretary]
    [goog.events :as gevents]
    [re-frame.core :as re-frame]
-   [alexandria.events :as events]
-   ))
+   [alexandria.events :as events]))
 
 (defn hook-browser-navigation! []
   (doto (History.)
@@ -24,12 +23,9 @@
   (defroute "/" []
     (re-frame/dispatch [::events/set-active-panel :home-panel]))
 
-  (defroute "/about" []
-    (re-frame/dispatch [::events/set-active-panel :about-panel]))
-
-  (defroute "/books" []
+  (defroute "/documents" []
     (re-frame/dispatch [::events/get-documents])
-    (re-frame/dispatch [::events/set-active-panel :book-panel]))
+    (re-frame/dispatch [::events/set-active-panel :doc-panel]))
 
 
   ;; --------------------

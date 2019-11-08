@@ -45,11 +45,11 @@ func NewPostgresDocumentRepository(database *PostgresDatabase) DocumentRepositor
 }
 
 type documentService struct {
-	storage DocumentSave
+	storage DocumentStorage
 	repo    DocumentRepository
 }
 
-func NewDocumentService(storage DocumentSave, repo DocumentRepository) DocumentService {
+func NewDocumentService(storage DocumentStorage, repo DocumentRepository) DocumentService {
 	return &documentService{
 		storage: storage,
 		repo:    repo,
@@ -71,6 +71,13 @@ func (s *documentService) GetByID(ctx context.Context, id string) (*Document, er
 		logrus.WithError(err).WithField("id", id).Error("unable to fetch doc from repository")
 		return nil, errors.Wrap(err, "unable to fetch from repository")
 	}
+
+	filePath, err := s.storage.Get(ctx, entity.Path)
+	if err != nil {
+		logrus.WithError(err).WithField("id", id).Error("unable to get path from storage")
+		return nil, errors.Wrap(err, "unable to get path from storage")
+	}
+	entity.Path = filePath
 	return entity, nil
 }
 

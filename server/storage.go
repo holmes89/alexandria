@@ -7,6 +7,7 @@ import (
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/s3blob"
 	"io"
+	"time"
 )
 
 type DocumentSave interface {
@@ -14,7 +15,7 @@ type DocumentSave interface {
 }
 
 type DocumentGet interface {
-	Get(ctx context.Context, writer io.Writer) error
+	Get(ctx context.Context, path string) (string, error)
 }
 
 type DocumentStorage interface {
@@ -36,7 +37,7 @@ func NewBucketStorage(config BucketConfig) *BucketStorage {
 	}
 }
 
-func NewBucketDocumentStorage(storage *BucketStorage) DocumentSave {
+func NewBucketDocumentStorage(storage *BucketStorage) DocumentStorage {
 	return storage
 }
 
@@ -55,5 +56,14 @@ func (s *BucketStorage) Save(ctx context.Context, fileName string, reader io.Rea
 		return "", errors.Wrap(err, "failed to upload file")
 	}
 
-	return "", err
+	return fileName, err //TODO allow for custom directory?
+}
+
+
+func (s *BucketStorage) Get(ctx context.Context, path string) (string, error) {
+	opts := &blob.SignedURLOptions{
+		Expiry: 15 * time.Minute,
+		Method: "GET",
+	}
+	return s.Bucket.SignedURL(ctx, path, opts)
 }

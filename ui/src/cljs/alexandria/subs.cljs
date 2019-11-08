@@ -13,6 +13,6 @@
     (:active-panel db)))
 
 (re-frame/reg-sub
-    ::books
+    ::docs
   (fn [db _]
-    (:book-data db)))
+    (:document-data db)))

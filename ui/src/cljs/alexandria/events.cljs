@@ -22,7 +22,7 @@
     [db [_ response]]
     (-> db
         (assoc :loading? false)
-        (assoc :book-data (js->clj response)))))
+        (assoc :document-data (js->clj response)))))
 
 (re-frame/reg-event-db                   
     ::bad-response             
@@ -35,7 +35,7 @@
   (fn
     [{db :db} _]
     {:http-xhrio {:method          :get
-                  :uri             "http://localhost:8080/books/"
+                  :uri             "http://localhost:8080/documents/"
                   :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
                   :on-success      [::process-response]
