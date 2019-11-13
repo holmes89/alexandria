@@ -8,7 +8,7 @@
                  [day8.re-frame/http-fx "0.1.6"]
                  [reagent "0.8.1"]
                  [re-frame "0.10.9"]
-                 [secretary "1.2.3"]]
+                 [clj-commons/secretary "1.2.4"]]
 
   :plugins [
             ]

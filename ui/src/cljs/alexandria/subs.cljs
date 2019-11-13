@@ -16,3 +16,8 @@
     ::docs
   (fn [db _]
     (:document-data db)))
+
+(re-frame/reg-sub
+    ::active-doc
+  (fn [db _]
+    (:active-doc db)))

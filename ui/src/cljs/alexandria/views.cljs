@@ -18,6 +18,14 @@
      ]))
 
 
+;; read
+
+(defn read-panel []
+  (let [doc (re-frame/subscribe [::subs/active-doc])]
+    (fn []
+      [:div.container
+       [:h1.read-title (:display_name @doc)]])))
+
 ;; docs
 
 (defn doc-icon
@@ -56,6 +64,7 @@
   (case panel-name
     :home-panel [home-panel]
     :doc-panel [doc-panel]
+    :read-panel [read-panel]
     [:div]))
 
 (defn show-panel [panel-name]

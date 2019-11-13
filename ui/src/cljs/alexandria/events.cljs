@@ -42,3 +42,24 @@
                   :on-failure      [::bad-response]
                   }
      :db  (assoc db :loading? true)}))
+
+(re-frame/reg-event-db                   
+    ::process-get-doc-by-id             
+  (fn
+    [db [_ response]]
+    (-> db
+        (assoc :loading? false)
+        (assoc :active-doc (js->clj response)))))
+
+(re-frame/reg-event-fx
+    ::get-document-by-id
+  (fn
+    [{db :db} [_ id]]
+    {:http-xhrio {:method          :get
+                  :uri             (str "http://localhost:8080/documents/" id) 
+                  :format          (ajax/json-request-format)
+                  :response-format (ajax/json-response-format {:keywords? true}) 
+                  :on-success      [::process-get-doc-by-id]
+                  :on-failure      [::bad-response]
+                  }
+     :db  (assoc db :loading? true)}))
