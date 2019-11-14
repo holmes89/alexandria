@@ -2,8 +2,11 @@
   (:require
    [re-frame.core :as re-frame]
    [alexandria.subs :as subs]
-   [alexandria.events :as events]))
+   [alexandria.events :as events]
+   [pdfjs-dist :as pdfjs]))
 
+
+(enable-console-print!)
 
 ;; home
 
@@ -11,7 +14,6 @@
   (let [name (re-frame/subscribe [::subs/name])]
     [:div
      [:h1.main-title "Alexandria" ]
-
      [:div
       [:a {:href "#/documents"}
        "documents"]]
@@ -19,12 +21,27 @@
 
 
 ;; read
+(defn load-pdf [url]
+  (if url
+    (let [loadingTask (pdfjs/getDocument url)]
+      (.then loadingTask (fn [pdf]
+                           (.then (.getPage pdf 1)
+                                  (fn [page]
+                                    (let [viewport (.getViewport page 1)
+                                          canvas (.getElementById js/document "doc")
+                                          ctx (.getContext canvas "2d")
+                                          renderContext (js-obj "canvasContext" ctx "viewport" viewport)]
+                                      (.render page renderContext)))))))
+    [:div "bar"])
+  [:div "test"])
 
 (defn read-panel []
   (let [doc (re-frame/subscribe [::subs/active-doc])]
     (fn []
       [:div.container
-       [:h1.read-title (:display_name @doc)]])))
+       [:h1.read-title (:display_name @doc)]
+       [:canvas#doc]])
+    (load-pdf (:path @doc))))
 
 ;; docs
 

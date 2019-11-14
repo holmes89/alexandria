@@ -3,7 +3,11 @@
     "shadow-cljs": "2.8.65"
   },
   "dependencies": {
+    "buffer": "^5.4.3",
     "create-react-class": "15.6.3",
+    "events": "^3.0.0",
+    "pdfjs-dist": "^2.2.228",
+    "process": "^0.11.10",
     "react": "16.8.6",
     "react-dom": "16.8.6"
   }
