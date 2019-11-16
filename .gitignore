@@ -2,3 +2,4 @@
 env.sh
 node_modules
 .shadow-cljs
+.DS_Store
