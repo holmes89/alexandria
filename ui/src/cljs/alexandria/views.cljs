@@ -2,7 +2,8 @@
   (:require
    [re-frame.core :as re-frame]
    [alexandria.subs :as subs]
-   [alexandria.events :as events]))
+   [alexandria.events :as events]
+   [react-pdf :as pdf]))
 
 
 ;; home
@@ -19,12 +20,21 @@
 
 
 ;; read
+(defn pdf-page [num]
+  [:> pdf/Page {:pageNumber num}])
+
+(defn pdf-reader [src]
+  [:> pdf/Document {:file src}
+   (pdf-page 1)])
 
 (defn read-panel []
   (let [doc (re-frame/subscribe [::subs/active-doc])]
     (fn []
       [:div.container
-       [:h1.read-title (:display_name @doc)]])))
+       [:h1.read-title (:display_name @doc)]
+       (let [src (:path @doc)]
+         (if src
+           [pdf-reader (:path @doc)]))])))
 
 ;; docs
 

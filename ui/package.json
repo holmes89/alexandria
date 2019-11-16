@@ -4,7 +4,10 @@
   },
   "dependencies": {
     "create-react-class": "15.6.3",
+    "querystring": "^0.2.0",
     "react": "16.8.6",
-    "react-dom": "16.8.6"
+    "react-dom": "16.8.6",
+    "react-pdf": "^4.1.0",
+    "url": "^0.11.0"
   }
 }
