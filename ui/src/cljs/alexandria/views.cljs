@@ -12,16 +12,35 @@
   (let [name (re-frame/subscribe [::subs/name])]
     [:div
      [:h1.main-title "Alexandria" ]
-
      [:div
       [:a {:href "#/documents"}
-       "documents"]]
-     ]))
+       "documents"]]]))
 
 
 ;; read
 (defn pdf-page [num]
-  [:> pdf/Page {:pageNumber num}])
+  (let [page-num (re-frame/subscribe [::subs/doc-page])
+        zoom (re-frame/subscribe [::subs/doc-zoom])]
+    [:> pdf/Page {:pageNumber @page-num :scale @zoom}]))
+
+
+(defn zoom-in []
+  [:button.button {:on-click #(re-frame/dispatch [::events/zoom-in])}
+   [:i.fas.fa-search-plus]])
+
+(defn zoom-out []
+  [:button.button {:on-click #(re-frame/dispatch [::events/zoom-out])}
+   [:i.fas.fa-search-minus]])
+
+(defn next-page []
+  [:button.button {:on-click #(re-frame/dispatch [::events/next-page])}
+   [:span "Next"]
+   [:i.fas.fa-arrow-right]])
+
+(defn prev-page []
+  [:button.button {:on-click #(re-frame/dispatch [::events/prev-page])}
+   [:i.fas.fa-arrow-left]
+   [:span "Prev"]])
 
 (defn pdf-reader [src]
   [:> pdf/Document {:file src}
@@ -32,6 +51,10 @@
     (fn []
       [:div.container
        [:h1.read-title (:display_name @doc)]
+       (prev-page)
+       (next-page)
+       (zoom-in)
+       (zoom-out)
        (let [src (:path @doc)]
          (if src
            [pdf-reader (:path @doc)]))])))

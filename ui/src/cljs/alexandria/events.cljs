@@ -16,6 +16,26 @@
   (fn [db [_ active-panel]]
     (assoc db :active-panel active-panel)))
 
+(re-frame/reg-event-db
+    ::next-page
+  (fn [db]
+    (update db :page-num inc 1)))
+
+(re-frame/reg-event-db
+    ::prev-page
+  (fn [db]
+    (update db :page-num dec 1)))
+
+(re-frame/reg-event-db
+    ::zoom-in
+  (fn [db]
+    (update db :zoom + 0.2)))
+
+(re-frame/reg-event-db
+    ::zoom-out
+  (fn [db]
+    (update db :zoom - 0.2)))
+
 (re-frame/reg-event-db                   
     ::process-response             
   (fn

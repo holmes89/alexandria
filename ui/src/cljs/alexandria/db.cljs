@@ -3,4 +3,6 @@
 (def default-db
   {:name "re-frame"
    :document-data []
-   :active-doc "test"})
+   :active-doc "test"
+   :page-num 1
+   :zoom 1.0})
