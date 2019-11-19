@@ -31,3 +31,43 @@ h1.read-title {
   text-align: center;
   margin-bottom: 25px;
 }
+
+#doc {
+  text-align: center;
+  border-left: 1px solid #bbb;
+  border-right: 1px solid #bbb;
+  max-height: 100vh;
+  overflow: auto;
+}
+
+a.page-turn {
+  height: 100%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+}
+
+a.page-turn:hover {
+  background-color: #eee;
+}
+
+a.page-turn .fa-arrow-right,
+a.page-turn .fa-arrow-left{
+  width: 100%;
+}
+
+#doc canvas {
+  display: inline !important;
+}
+#read-bar .navbar-start{
+  flex-grow: 1;
+  justify-content: center;
+}
+
+#read-bar .navbar-end {
+  margin-right: 20px;
+}
+
+#read-bar svg {
+  margin: 15px 5px;
+}

@@ -6,6 +6,14 @@
    [react-pdf :as pdf]))
 
 
+;; shared components
+
+(defn navbar []
+  [:nav.navbar {:role "navigation" :aria-label "main navigation"}
+   [:div.navbar-brand
+    [:a.navbar-item {:href "#/documents"}
+     [:span "Alexandria"]]]])
+
 ;; home
 
 (defn home-panel []
@@ -21,43 +29,58 @@
 (defn pdf-page [num]
   (let [page-num (re-frame/subscribe [::subs/doc-page])
         zoom (re-frame/subscribe [::subs/doc-zoom])]
-    [:> pdf/Page {:pageNumber @page-num :scale @zoom}]))
-
+    [:> pdf/Page {:pageNumber @page-num :scale @zoom :renderAnnotationLayer false}]))
 
 (defn zoom-in []
-  [:button.button {:on-click #(re-frame/dispatch [::events/zoom-in])}
+  [:a {:on-click #(re-frame/dispatch [::events/zoom-in])}
    [:i.fas.fa-search-plus]])
 
 (defn zoom-out []
-  [:button.button {:on-click #(re-frame/dispatch [::events/zoom-out])}
+  [:a { :on-click #(re-frame/dispatch [::events/zoom-out])}
    [:i.fas.fa-search-minus]])
 
+(defn read-bar [title]
+  [:nav#read-bar.navbar.is-dark
+   [:div.navbar-menu
+    [:div.navbar-start
+     [:div.navbar-item
+      [:h3.book-title title]]]
+    [:div.navbar-end
+     (zoom-in)
+     (zoom-out)]]])
+
 (defn next-page []
-  [:button.button {:on-click #(re-frame/dispatch [::events/next-page])}
-   [:span "Next"]
+  [:a.page-turn {:on-click #(re-frame/dispatch [::events/next-page])}
    [:i.fas.fa-arrow-right]])
 
 (defn prev-page []
-  [:button.button {:on-click #(re-frame/dispatch [::events/prev-page])}
-   [:i.fas.fa-arrow-left]
-   [:span "Prev"]])
+  [:a.page-turn {:on-click #(re-frame/dispatch [::events/prev-page])}
+   [:i.fas.fa-arrow-left]])
 
 (defn pdf-reader [src]
   [:> pdf/Document {:file src}
    (pdf-page 1)])
 
-(defn read-panel []
+(defn read-section []
   (let [doc (re-frame/subscribe [::subs/active-doc])]
-    (fn []
-      [:div.container
-       [:h1.read-title (:display_name @doc)]
-       (prev-page)
-       (next-page)
-       (zoom-in)
-       (zoom-out)
-       (let [src (:path @doc)]
-         (if src
-           [pdf-reader (:path @doc)]))])))
+    [:div
+     (read-bar (:display_name @doc))
+     [:div
+      [:div.columns.is-gapless
+       [:div.column.is-1
+        (prev-page)]
+       [:div#doc.column.is-10
+        (let [src (:path @doc)]
+          (if src
+            [pdf-reader (:path @doc)]))]
+       [:div.column.is-1
+        (next-page)]]]]))
+
+
+(defn read-panel []
+  [:div
+   (navbar)
+   (read-section)])
 
 ;; docs
 
