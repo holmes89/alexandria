@@ -3,7 +3,8 @@
    [re-frame.core :as re-frame]
    [alexandria.subs :as subs]
    [alexandria.events :as events]
-   [react-pdf :as pdf]))
+   [react-pdf :as pdf]
+   [clojure.string :as str]))
 
 
 ;; shared components
@@ -83,6 +84,39 @@
    (read-section)])
 
 ;; docs
+(defn file-upload-name []
+  (peek (str/split (.-value (.getElementById js/document "file-upload")) "\\")))
+(defn upload-form [] (js/FormData. (.getElementById js/document "upload")))
+
+(defn upload-modal []
+  (let [show (re-frame/subscribe [::subs/is-upload-showing?])
+        upload-name (re-frame/subscribe [::subs/upload-file-name])]
+    (if @show
+      [:div.modal.is-active
+       [:div.modal-background]
+       [:div.modal-card
+        [:header.modal-card-head
+         [:p.modal-card-title "Upload"]
+         [:button.delete {:on-click #(re-frame/dispatch [::events/hide-upload-modal])}]]
+        [:section.modal-card-body
+         [:form#upload
+          [:div.field
+           [:label.label "Name"]
+           [:div.control
+            [:input.input {:type "text" :name "name"}]]]
+          [:div.field
+           [:label.file-label
+            [:input#file-upload.file-input {:type "file" :name "file" :on-change #(re-frame/dispatch [::events/update-upload-file-name (file-upload-name)])}]
+            [:span.file-cta
+             [:span.file-icon
+              [:i.fas.fa-upload]]
+             [:span.file-label "Choose a file..."]]
+            [:span.file-name @upload-name]]]]]
+        [:footer.modal-card-foot
+         [:button.button.is-success {:on-click #((re-frame/dispatch [::events/upload-book (upload-form)])
+                                                 (re-frame/dispatch [::events/hide-upload-modal]))}"Submit"]
+         [:button.button {:on-click #(re-frame/dispatch [::events/hide-upload-modal])} "Cancel"]]]]
+      [:div])))
 
 (defn doc-icon
   [type]
@@ -111,8 +145,11 @@
 (defn doc-panel []
   (fn []
     [:div.container
-     [:h1.main-title "Alexandria"]
-     [doc-list]]))
+     (navbar)
+     [:a {:on-click #(re-frame/dispatch [::events/show-upload-modal])}
+      [:i.fas.fa-plus] "Add"]
+     [doc-list]
+     (upload-modal)]))
 
 ;; main
 

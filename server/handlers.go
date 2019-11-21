@@ -166,7 +166,7 @@ func (h *paperHandler) Create(w http.ResponseWriter, r *http.Request) {
 	book := &Document{
 		DisplayName: displayName[0],
 		Name:        fileHeader.Filename,
-		Type:        "book",
+		Type:        "paper",
 	}
 
 	if err := h.service.Add(ctx, file, book); err != nil {

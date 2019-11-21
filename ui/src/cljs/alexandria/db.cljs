@@ -5,4 +5,6 @@
    :document-data []
    :active-doc "test"
    :page-num 1
-   :zoom 1.0})
+   :zoom 1.0
+   :show-upload false
+   :upload-file-name ""})

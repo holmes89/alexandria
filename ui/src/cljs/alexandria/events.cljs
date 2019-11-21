@@ -36,6 +36,21 @@
   (fn [db]
     (update db :zoom - 0.2)))
 
+(re-frame/reg-event-db
+    ::show-upload-modal
+  (fn [db]
+    (assoc db :show-upload true)))
+
+(re-frame/reg-event-db
+    ::hide-upload-modal
+  (fn [db]
+    (assoc db :show-upload false)))
+
+(re-frame/reg-event-db
+    ::update-upload-file-name
+  (fn [db [_ name]]
+    (assoc db :upload-file-name name)))
+
 (re-frame/reg-event-db                   
     ::process-response             
   (fn
@@ -80,6 +95,20 @@
                   :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
                   :on-success      [::process-get-doc-by-id]
+                  :on-failure      [::bad-response]
+                  }
+     :db  (assoc db :loading? true)}))
+
+
+(re-frame/reg-event-fx
+    ::upload-book
+  (fn
+    [{db :db} [_ form]]
+    {:http-xhrio {:method          :post
+                  :uri             "http://localhost:8080/books/"
+                  :body form
+                  :response-format (ajax/json-response-format {:keywords? true}) 
+                  :on-success      [::get-documents]
                   :on-failure      [::bad-response]
                   }
      :db  (assoc db :loading? true)}))

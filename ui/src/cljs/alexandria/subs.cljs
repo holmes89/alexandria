@@ -31,3 +31,13 @@
     ::doc-zoom
   (fn [db _]
     (:zoom db)))
+
+(re-frame/reg-sub
+    ::is-upload-showing?
+  (fn [db _]
+    (:show-upload db)))
+
+(re-frame/reg-sub
+    ::upload-file-name
+  (fn [db _]
+    (:upload-file-name db)))
