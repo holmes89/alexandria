@@ -16,6 +16,7 @@ type DocumentSave interface {
 
 type DocumentGet interface {
 	Get(ctx context.Context, path string) (string, error)
+	List(ctx context.Context) <-chan string
 }
 
 type DocumentStorage interface {
@@ -66,4 +67,33 @@ func (s *BucketStorage) Get(ctx context.Context, path string) (string, error) {
 		Method: "GET",
 	}
 	return s.Bucket.SignedURL(ctx, path, opts)
+}
+
+func (s *BucketStorage) List(ctx context.Context) <-chan string {
+	opts := &blob.ListOptions{}
+	iter := s.Bucket.List(opts)
+	out := make(chan string)
+	go func() {
+		defer close(out)
+		bgctx := context.Background()
+		for{
+			for {
+				obj, err := iter.Next(bgctx)
+				if err == io.EOF {
+					logrus.Info("file search complete")
+					return
+				}
+				if err != nil {
+					logrus.WithError(err).Error("unable to fetch object")
+					return
+				}
+				if obj.IsDir {
+					logrus.WithField("name", obj.Key).Debug("directory found")
+					continue
+				}
+				out <- obj.Key
+			}
+		}
+	}()
+	return out
 }

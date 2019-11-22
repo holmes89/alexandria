@@ -9,6 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"mime/multipart"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -33,6 +35,7 @@ type DocumentService interface {
 	GetByID(ctx context.Context, id string) (*Document, error)
 	Add(ctx context.Context, file multipart.File, document *Document) error
 	Delete(ctx context.Context, id string) error
+	Scan(ctx context.Context) error
 }
 
 type DocumentRepository interface {
@@ -40,6 +43,7 @@ type DocumentRepository interface {
 	FindByID(ctx context.Context, id string) (*Document, error)
 	Insert(ctx context.Context, document *Document) error
 	Delete(ctx context.Context, id string) error
+	UpsertStream(ctx context.Context, input <-chan *Document) error
 }
 
 func NewPostgresDocumentRepository(database *PostgresDatabase) DocumentRepository {
@@ -109,6 +113,31 @@ func (s *documentService) Add(ctx context.Context, file multipart.File, doc *Doc
 
 func (s *documentService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *documentService) Scan(ctx context.Context) error {
+	fileNameStream := s.storage.List(ctx)
+	docStream := make(chan *Document)
+	go func() {
+		defer close(docStream)
+		for path := range fileNameStream {
+			ext := filepath.Ext(path)
+			if ext != ".mobi" && ext != ".pdf" && ext != ".epub" {
+				continue
+			}
+			name := strings.ReplaceAll(path, filepath.Dir(path), "")
+			name = strings.ReplaceAll(name, ext, "")
+			doc := &Document{
+				DisplayName: name,
+				Name:        name,
+				Path:        path,
+				Type:        "book",
+				Created:     time.Now(),
+			}
+			docStream <- doc
+		}
+	}()
+	return s.repo.UpsertStream(ctx, docStream)
 }
 
 func isSupported(file multipart.File) bool {

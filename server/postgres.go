@@ -92,6 +92,18 @@ func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*Document, 
 	return doc, nil
 }
 
+func (r *PostgresDatabase) existsByPath(ctx context.Context, path string) (bool, error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	row := ps.Select("count(id)").
+		From("documents").Where(sq.Eq{"path": path}).RunWith(r.conn).QueryRow()
+	var count int
+	if err := row.Scan(&count); err != nil {
+		logrus.WithError(err).Warn("unable to scan doc results")
+	}
+
+	return count > 0, nil
+}
+
 func (r *PostgresDatabase) Insert(ctx context.Context, doc *Document) error {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	if _, err := ps.Insert("documents").Columns("id", "description", "displayName", "name", "type", "path").
@@ -101,6 +113,23 @@ func (r *PostgresDatabase) Insert(ctx context.Context, doc *Document) error {
 		logrus.WithError(err).Warn("unable to insert doc")
 		return errors.Wrap(err, "unable to insert doc metadata")
 	}
+	return nil
+}
+
+func (r *PostgresDatabase) UpsertStream(ctx context.Context, input <-chan *Document) error {
+	count := 0
+	for doc := range input {
+		bctx := context.Background()
+		if exists, _ := r.existsByPath(bctx, doc.Path); exists {
+			continue
+		}
+		if err := r.Insert(bctx, doc); err != nil {
+			logrus.WithError(err).Info("unable to upsert document")
+			return errors.Wrap(err, "unable to upsert document")
+		}
+		count++
+	}
+	logrus.WithField("count", count).Info("documents added")
 	return nil
 }
 

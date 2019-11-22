@@ -18,6 +18,7 @@ func MakeDocumentHandler(mr *mux.Router, service DocumentService) http.Handler {
 
 	r.HandleFunc("/{id}", h.FindByID).Methods("GET")
 	r.HandleFunc("/{id}", h.Delete).Methods("DELETE")
+	r.HandleFunc("/scan", h.Scan).Methods("PUT")
 	r.HandleFunc("/", h.FindAll).Methods("GET")
 
 	return r
@@ -115,6 +116,20 @@ func (h *documentHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 
 	encodeResponse(r.Context(), w, entity)
 }
+
+func (h *documentHandler) Scan(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	err := h.service.Scan(ctx)
+
+	if err != nil {
+		makeError(w, http.StatusInternalServerError, "document", "Server Error", "scan")
+		return
+	}
+
+	encodeResponse(r.Context(), w, map[string]string{"status":"success"})
+}
+
 
 func (h *bookHandler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
