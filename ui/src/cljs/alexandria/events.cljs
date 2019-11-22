@@ -99,7 +99,6 @@
                   }
      :db  (assoc db :loading? true)}))
 
-
 (re-frame/reg-event-fx
     ::upload-book
   (fn
@@ -107,6 +106,19 @@
     {:http-xhrio {:method          :post
                   :uri             "http://localhost:8080/books/"
                   :body form
+                  :response-format (ajax/json-response-format {:keywords? true}) 
+                  :on-success      [::get-documents]
+                  :on-failure      [::bad-response]
+                  }
+     :db  (assoc db :loading? true)}))
+
+(re-frame/reg-event-fx
+    ::delete-document-by-id
+  (fn
+    [{db :db} [_ id]]
+    {:http-xhrio {:method          :delete
+                  :uri             (str "http://localhost:8080/documents/" id) 
+                  :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
                   :on-success      [::get-documents]
                   :on-failure      [::bad-response]

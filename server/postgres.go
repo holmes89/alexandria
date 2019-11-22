@@ -103,3 +103,13 @@ func (r *PostgresDatabase) Insert(ctx context.Context, doc *Document) error {
 	}
 	return nil
 }
+
+func (r *PostgresDatabase) Delete(ctx context.Context, id string) error {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	if _, err := ps.Delete("documents").Where(sq.Eq{"id": id}).RunWith(r.conn).Exec(); err != nil {
+		logrus.WithError(err).Warn("unable to scan doc results")
+		return errors.Wrap(err, "unable to delete")
+	}
+
+	return nil
+}

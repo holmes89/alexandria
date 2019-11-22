@@ -40,13 +40,15 @@
   [:a { :on-click #(re-frame/dispatch [::events/zoom-out])}
    [:i.fas.fa-search-minus]])
 
-(defn read-bar [title]
+(defn read-bar
+  [{:keys [title path name]}]
   [:nav#read-bar.navbar.is-dark
    [:div.navbar-menu
     [:div.navbar-start
      [:div.navbar-item
       [:h3.book-title title]]]
     [:div.navbar-end
+     [:a {:href path :download name :target "_blank"} [:i.fas.fa-download]]
      (zoom-in)
      (zoom-out)]]])
 
@@ -65,7 +67,7 @@
 (defn read-section []
   (let [doc (re-frame/subscribe [::subs/active-doc])]
     [:div
-     (read-bar (:display_name @doc))
+     (read-bar @doc)
      [:div
       [:div.columns.is-gapless
        [:div.column.is-1
@@ -87,6 +89,11 @@
 (defn file-upload-name []
   (peek (str/split (.-value (.getElementById js/document "file-upload")) "\\")))
 (defn upload-form [] (js/FormData. (.getElementById js/document "upload")))
+(defn set-upload-name [name] (re-frame/dispatch [::events/update-upload-file-name name]))
+(defn submit-upload []
+  (re-frame/dispatch [::events/upload-book (upload-form)])
+  (re-frame/dispatch [::events/hide-upload-modal])
+  (set-upload-name ""))
 
 (defn upload-modal []
   (let [show (re-frame/subscribe [::subs/is-upload-showing?])
@@ -106,15 +113,14 @@
             [:input.input {:type "text" :name "name"}]]]
           [:div.field
            [:label.file-label
-            [:input#file-upload.file-input {:type "file" :name "file" :on-change #(re-frame/dispatch [::events/update-upload-file-name (file-upload-name)])}]
+            [:input#file-upload.file-input {:type "file" :name "file" :on-change #(set-upload-name (file-upload-name))}]
             [:span.file-cta
              [:span.file-icon
               [:i.fas.fa-upload]]
              [:span.file-label "Choose a file..."]]
             [:span.file-name @upload-name]]]]]
         [:footer.modal-card-foot
-         [:button.button.is-success {:on-click #((re-frame/dispatch [::events/upload-book (upload-form)])
-                                                 (re-frame/dispatch [::events/hide-upload-modal]))}"Submit"]
+         [:button.button.is-success {:on-click submit-upload}"Submit"]
          [:button.button {:on-click #(re-frame/dispatch [::events/hide-upload-modal])} "Cancel"]]]]
       [:div])))
 
@@ -126,9 +132,12 @@
 
 (defn doc-item
   [{:keys [id display_name type]}]
-  [:a.panel-block {:href (str "#/documents/" id)}
+  [:div.panel-block
    [:div.doc-info [doc-icon type]
-    display_name] ])
+    display_name
+    [:span.icons.is-pulled-right
+     [:a {:href (str "#/documents/" id)} [:i.fas.fa-book-open]]
+     [:a {:on-click #(re-frame/dispatch [::events/delete-document-by-id id])} [:i.fas.fa-times]]]]])
 
 
 (defn doc-list []

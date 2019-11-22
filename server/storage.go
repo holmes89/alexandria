@@ -62,7 +62,7 @@ func (s *BucketStorage) Save(ctx context.Context, fileName string, reader io.Rea
 
 func (s *BucketStorage) Get(ctx context.Context, path string) (string, error) {
 	opts := &blob.SignedURLOptions{
-		Expiry: 15 * time.Minute,
+		Expiry: 15 * time.Hour,
 		Method: "GET",
 	}
 	return s.Bucket.SignedURL(ctx, path, opts)

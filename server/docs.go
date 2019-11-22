@@ -32,12 +32,14 @@ type DocumentService interface {
 	GetAll(ctx context.Context, filter map[string]interface{}) ([]*Document, error)
 	GetByID(ctx context.Context, id string) (*Document, error)
 	Add(ctx context.Context, file multipart.File, document *Document) error
+	Delete(ctx context.Context, id string) error
 }
 
 type DocumentRepository interface {
 	FindAll(ctx context.Context, filter map[string]interface{}) ([]*Document, error)
 	FindByID(ctx context.Context, id string) (*Document, error)
 	Insert(ctx context.Context, document *Document) error
+	Delete(ctx context.Context, id string) error
 }
 
 func NewPostgresDocumentRepository(database *PostgresDatabase) DocumentRepository {
@@ -103,6 +105,10 @@ func (s *documentService) Add(ctx context.Context, file multipart.File, doc *Doc
 	}
 
 	return nil
+}
+
+func (s *documentService) Delete(ctx context.Context, id string) error {
+	return s.repo.Delete(ctx, id)
 }
 
 func isSupported(file multipart.File) bool {

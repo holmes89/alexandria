@@ -2,15 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/fx"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -48,6 +44,7 @@ func NewApp() *fx.App {
 		fx.Invoke(MakeDocumentHandler,
 			MakeBookHandler,
 			MakePaperHandler),
+		fx.Logger(NewLogger()),
 	)
 }
 func NewMux(lc fx.Lifecycle) *mux.Router {
@@ -61,19 +58,43 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 	//})
 	router := mux.NewRouter()
 
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"})
+	cors := handlers.CORS(originsOk, headersOk, methodsOk)
+
+	router.Use(cors)
+	handler := (cors)(router)
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logrus.Info("starting server")
-			go http.ListenAndServe(":8080", handlers.CORS()(router))
+
+			go http.ListenAndServe(":8080", handler)
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
 			logrus.Info("stopping server")
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, syscall.SIGINT)
-			return fmt.Errorf("%s", <-c)
+			return nil
 		},
 	})
 
 	return router
+}
+
+
+//NewLogger uses logrus for logging
+func NewLogger() *logrus.Logger {
+	return logrus.New()
+}
+
+// EndpointLogging middleware to handle logging and control headers.
+func EndpointLogging(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "OPTIONS" {
+			return
+		}
+		url := r.URL.String()
+		logrus.WithFields(logrus.Fields{"uri": url, "method": r.Method}).Info("endpoint")
+		h.ServeHTTP(w, r)
+	})
 }
