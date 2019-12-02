@@ -122,12 +122,16 @@ func (s *documentService) Scan(ctx context.Context) error {
 		defer close(docStream)
 		for path := range fileNameStream {
 			ext := filepath.Ext(path)
-			if ext != ".mobi" && ext != ".pdf" && ext != ".epub" {
+			if ext != ".pdf" {
 				continue
 			}
-			name := strings.ReplaceAll(path, filepath.Dir(path), "")
-			name = strings.ReplaceAll(name, ext, "")
+			name := strings.ReplaceAll(path, ext, "")
+			name = strings.ReplaceAll(name, filepath.Dir(path), "")
+			if name[0] == '/' {
+				name = name[1:]
+			}
 			doc := &Document{
+				ID: uuid.New().String(),
 				DisplayName: name,
 				Name:        name,
 				Path:        path,
