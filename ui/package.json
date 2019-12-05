@@ -3,6 +3,7 @@
     "shadow-cljs": "2.8.65"
   },
   "dependencies": {
+    "auth0-lock": "^11.19.0",
     "create-react-class": "15.6.3",
     "querystring": "^0.2.0",
     "react": "16.8.6",

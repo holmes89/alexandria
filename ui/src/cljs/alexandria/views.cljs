@@ -4,7 +4,8 @@
    [alexandria.subs :as subs]
    [alexandria.events :as events]
    [react-pdf :as pdf]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [alexandria.auth0 :as auth0]))
 
 
 ;; shared components
@@ -17,13 +18,37 @@
 
 ;; home
 
+(defn button [text on-click]
+  [:button
+   {:type     "button"
+    :on-click on-click}
+   text])
+
+(def login-button
+  (button "Log in" #(.show auth0/lock)))
+
+(def logout-button
+  (button "Log out" #(re-frame/dispatch [::auth0/logout])))
+
+(defn login-panel []
+  (let [user-name (re-frame/subscribe [::auth0/user-name])
+        token (re-frame/subscribe [::auth0/token])]
+    (fn []
+      (if @user-name
+        [:div
+         [:div "Hello " @user-name]
+         [:div @token]
+         logout-button]
+        [:div
+         [:div "Hello"]
+         login-button]))))
+
 (defn home-panel []
   (let [name (re-frame/subscribe [::subs/name])]
     [:div
      [:h1.main-title "Alexandria" ]
      [:div
-      [:a {:href "#/documents"}
-       "documents"]]]))
+      [login-panel]]]))
 
 
 ;; read
