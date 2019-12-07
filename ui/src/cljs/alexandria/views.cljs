@@ -9,46 +9,49 @@
 
 
 ;; shared components
-
-(defn navbar []
-  [:nav.navbar {:role "navigation" :aria-label "main navigation"}
-   [:div.navbar-brand
-    [:a.navbar-item {:href "#/documents"}
-     [:span "Alexandria"]]]])
-
-;; home
-
 (defn button [text on-click]
-  [:button
-   {:type     "button"
-    :on-click on-click}
+  [:a.button.is-light
+   {:on-click on-click}
    text])
 
 (def login-button
-  (button "Log in" #(.show auth0/lock)))
+  [:div.navbar-item
+   (button "Log in" #(.show auth0/lock))])
 
 (def logout-button
-  (button "Log out" #(re-frame/dispatch [::auth0/logout])))
+  [:a.navbar-item {:on-click #(re-frame/dispatch [::auth0/logout])} "Log out"])
 
-(defn login-panel []
-  (let [user-name (re-frame/subscribe [::auth0/user-name])
-        token (re-frame/subscribe [::auth0/token])]
-    (fn []
-      (if @user-name
-        [:div
-         [:div "Hello " @user-name]
-         [:div @token]
-         logout-button]
-        [:div
-         [:div "Hello"]
-         login-button]))))
+(defn nav-profile
+  []
+  (let [profile-image (re-frame/subscribe [::auth0/profile-image])]
+    [:div.navbar-item.has-dropdown.is-hoverable
+     [:a.navbar-link.is-arrowless
+      [:img {:src @profile-image}]]
+     [:div.navbar-dropdown.is-right
+      logout-button]]))
+
+(defn navbar []
+  [:nav.navbar.is-light {:role "navigation" :aria-label "main navigation"}
+   [:div.navbar-brand
+    [:div.navbar-item
+     [:span
+      "Alexandria"
+      [:img {:src "/assets/alexandria.png"}]]]]
+   [:div.navbar-menu
+    [:div.navbar-end
+     (let [authenticated (re-frame/subscribe [::auth0/authenticated])]
+       (if @authenticated
+         (nav-profile)
+         login-button))]]])
+
+;; home
 
 (defn home-panel []
   (let [name (re-frame/subscribe [::subs/name])]
     [:div
+     (navbar)
      [:h1.main-title "Alexandria" ]
-     [:div
-      [login-panel]]]))
+     [:div "A self managed library of documents"]]))
 
 
 ;; read

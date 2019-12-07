@@ -8,7 +8,16 @@ html, body {
   font-family: 'Merriweather', sans-serif;
 }
 
+/* Nav */
+.navbar-brand {
+  font-weight: bold;
+  font-family: 'Gentium Book Basic', sans-serif;
+  font-size: 24px;
+}
 
+.navbar-brand img {
+  vertical-align: top;
+}
 /* Title */ 
 
 h1.main-title {

@@ -7,4 +7,5 @@
    :page-num 1
    :zoom 1.0
    :show-upload false
-   :upload-file-name ""})
+   :upload-file-name ""
+   :authenticated false})
