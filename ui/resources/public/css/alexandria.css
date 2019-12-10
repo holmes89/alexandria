@@ -76,9 +76,11 @@ a.page-turn .fa-arrow-left{
   color: white;
 }
 
-#read-bar .navbar-start{
-  flex-grow: 1;
-  justify-content: center;
+#read-bar .navbar-start.centered {
+  
+  justify-content: flex-start;
+  margin-right: auto;
+  margin-left: auto;
 }
 
 #read-bar .navbar-end {
@@ -89,3 +91,7 @@ a.page-turn .fa-arrow-left{
   margin: 15px 5px;
 }
 
+#read-bar h3.book-title {
+  font-family: 'Merriweather', sans-serif;
+  font-size: 18px;
+}

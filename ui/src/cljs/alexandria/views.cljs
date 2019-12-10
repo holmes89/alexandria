@@ -47,75 +47,6 @@
          login-button))]]])
 
 ;; home
-
-(defn home-panel []
-  (let [name (re-frame/subscribe [::subs/name])]
-    [:div
-     (navbar)
-     [:h1.main-title "Alexandria" ]
-     [:div "A self managed library of documents"]]))
-
-
-;; read
-(defn pdf-page [num]
-  (let [page-num (re-frame/subscribe [::subs/doc-page])
-        zoom (re-frame/subscribe [::subs/doc-zoom])]
-    [:> pdf/Page {:pageNumber @page-num :scale @zoom :renderAnnotationLayer false}]))
-
-(defn zoom-in []
-  [:a {:on-click #(re-frame/dispatch [::events/zoom-in])}
-   [:i.fas.fa-search-plus]])
-
-(defn zoom-out []
-  [:a { :on-click #(re-frame/dispatch [::events/zoom-out])}
-   [:i.fas.fa-search-minus]])
-
-(defn read-bar
-  [{:keys [title path name]}]
-  [:nav#read-bar.navbar.is-dark
-   [:div.navbar-menu
-    [:div.navbar-start
-     [:div.navbar-item
-      [:h3.book-title title]]]
-    [:div.navbar-end
-     [:a {:href path :download name :target "_blank"} [:i.fas.fa-download]]
-     (zoom-in)
-     (zoom-out)]]])
-
-(defn next-page []
-  [:a.page-turn {:on-click #(re-frame/dispatch [::events/next-page])}
-   [:i.fas.fa-arrow-right]])
-
-(defn prev-page []
-  [:a.page-turn {:on-click #(re-frame/dispatch [::events/prev-page])}
-   [:i.fas.fa-arrow-left]])
-
-(defn pdf-reader [src]
-  [:> pdf/Document {:file src}
-   (pdf-page 1)])
-
-(defn read-section []
-  (let [doc (re-frame/subscribe [::subs/active-doc])]
-    [:div
-     (read-bar @doc)
-     [:div
-      [:div.columns.is-gapless
-       [:div.column.is-1
-        (prev-page)]
-       [:div#doc.column.is-10
-        (let [src (:path @doc)]
-          (if src
-            [pdf-reader (:path @doc)]))]
-       [:div.column.is-1
-        (next-page)]]]]))
-
-
-(defn read-panel []
-  [:div
-   (navbar)
-   (read-section)])
-
-;; docs
 (defn file-upload-name []
   (peek (str/split (.-value (.getElementById js/document "file-upload")) "\\")))
 (defn upload-form [] (js/FormData. (.getElementById js/document "upload")))
@@ -181,21 +112,98 @@
            ^{:key (:id doc)}[doc-item doc])]]])))
 
 
-(defn doc-panel []
-  (fn []
-    [:div.container
+(defn authenticated-body []
+  (re-frame/dispatch [::events/get-documents])
+  [:div
+   [:a {:on-click #(re-frame/dispatch [::events/show-upload-modal])}
+    [:i.fas.fa-plus] "Add"]
+   [doc-list]
+   (upload-modal)])
+
+(defn unauthenticated-body []
+  [:div
+   [:h1.main-title "Alexandria" ]
+   [:div "A self managed library of documents"]])
+
+(defn home-panel []
+  (let [name (re-frame/subscribe [::subs/name])
+        authed? (re-frame/subscribe [::auth0/authenticated])]
+    [:div
      (navbar)
-     [:a {:on-click #(re-frame/dispatch [::events/show-upload-modal])}
-      [:i.fas.fa-plus] "Add"]
-     [doc-list]
-     (upload-modal)]))
+     (if @authed?
+       (authenticated-body)
+       (unauthenticated-body))]))
+
+
+;; read
+(defn pdf-page [num]
+  (let [page-num (re-frame/subscribe [::subs/doc-page])
+        zoom (re-frame/subscribe [::subs/doc-zoom])]
+    [:> pdf/Page {:pageNumber @page-num :scale @zoom :renderAnnotationLayer false}]))
+
+(defn zoom-in []
+  [:a {:on-click #(re-frame/dispatch [::events/zoom-in])}
+   [:i.fas.fa-search-plus]])
+
+(defn zoom-out []
+  [:a { :on-click #(re-frame/dispatch [::events/zoom-out])}
+   [:i.fas.fa-search-minus]])
+
+(defn read-bar
+  [{:keys [display_name path name]}]
+  [:nav#read-bar.navbar.is-dark
+   [:div.navbar-menu
+    [:div.navbar-start
+     [:div.navbar-item
+      [:a {:href "/#/"} [:i.fas.fa-arrow-left]]]]
+    [:div.navbar-start.centered
+     [:div.navbar-item
+      [:h3.book-title display_name]]]
+    [:div.navbar-end
+     [:a {:href path :download name :target "_blank"} [:i.fas.fa-download]]
+     (zoom-in)
+     (zoom-out)]]])
+
+(defn next-page []
+  [:a.page-turn {:on-click #(re-frame/dispatch [::events/next-page])}
+   [:i.fas.fa-arrow-right]])
+
+(defn prev-page []
+  [:a.page-turn {:on-click #(re-frame/dispatch [::events/prev-page])}
+   [:i.fas.fa-arrow-left]])
+
+(defn pdf-reader [src]
+  [:> pdf/Document {:file src}
+   (pdf-page 1)])
+
+(defn read-section []
+  (let [doc (re-frame/subscribe [::subs/active-doc])]
+    [:div
+     (read-bar @doc)
+     [:div
+      [:div.columns.is-gapless
+       [:div.column.is-1
+        (prev-page)]
+       [:div#doc.column.is-10
+        (let [src (:path @doc)]
+          (if src
+            [pdf-reader (:path @doc)]))]
+       [:div.column.is-1
+        (next-page)]]]]))
+
+
+(defn read-panel []
+  [:div
+   (navbar)
+   (read-section)])
+
+
 
 ;; main
 
 (defn- panels [panel-name]
   (case panel-name
     :home-panel [home-panel]
-    :doc-panel [doc-panel]
     :read-panel [read-panel]
     [:div]))
 

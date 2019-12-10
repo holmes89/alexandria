@@ -28,7 +28,7 @@
     (re-frame/dispatch [::events/set-active-panel :read-panel]))
   (defroute "/documents" []
     (re-frame/dispatch [::events/get-documents])
-    (re-frame/dispatch [::events/set-active-panel :doc-panel]))
+    (re-frame/dispatch [::events/set-active-panel :home-panel]))
 
 
   ;; --------------------
