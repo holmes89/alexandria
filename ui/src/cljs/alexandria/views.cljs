@@ -16,7 +16,9 @@
 
 (def login-button
   [:div.navbar-item
-   (button "Log in" #(.show auth0/lock))])
+   [:a {:on-click #(.show auth0/lock)}
+    [:div
+     [:i.fas.fa-sign-in-alt]]]])
 
 (def logout-button
   [:a.navbar-item {:on-click #(re-frame/dispatch [::auth0/logout])} "Log out"])
