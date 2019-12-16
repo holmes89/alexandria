@@ -23,4 +23,4 @@ jobs:
         go get -v -t -d ./...
         
     - name: Build
-      run: go build -v main.go
+      run: go build -v server/.
