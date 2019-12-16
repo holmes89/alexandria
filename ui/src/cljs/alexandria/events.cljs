@@ -65,12 +65,19 @@
     [message]
     (js/console.log  message)))
 
+
+(defn auth-header [db]
+  "Get user token and format for API authorization"
+  (when-let [token (get-in db [:user :auth-result :idToken])]
+    [:Authorization (str "Bearer " token)]))
+
 (re-frame/reg-event-fx
     ::get-documents
   (fn
     [{db :db} _]
     {:http-xhrio {:method          :get
                   :uri             "http://localhost:8080/documents/"
+                  :headers         (auth-header db) 
                   :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
                   :on-success      [::process-response]
@@ -91,7 +98,8 @@
   (fn
     [{db :db} [_ id]]
     {:http-xhrio {:method          :get
-                  :uri             (str "http://localhost:8080/documents/" id) 
+                  :uri             (str "http://localhost:8080/documents/" id)
+                  :headers         (auth-header db) 
                   :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
                   :on-success      [::process-get-doc-by-id]
@@ -105,6 +113,7 @@
     [{db :db} [_ form]]
     {:http-xhrio {:method          :post
                   :uri             "http://localhost:8080/books/"
+                  :headers         (auth-header db) 
                   :body form
                   :response-format (ajax/json-response-format {:keywords? true}) 
                   :on-success      [::get-documents]
@@ -117,7 +126,8 @@
   (fn
     [{db :db} [_ id]]
     {:http-xhrio {:method          :delete
-                  :uri             (str "http://localhost:8080/documents/" id) 
+                  :uri             (str "http://localhost:8080/documents/" id)
+                  :headers         (auth-header db) 
                   :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
                   :on-success      [::get-documents]

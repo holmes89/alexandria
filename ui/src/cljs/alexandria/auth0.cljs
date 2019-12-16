@@ -20,6 +20,7 @@
   (let [auth-result-clj (js->clj auth-result-js :keywordize-keys true)
         access-token (:accessToken auth-result-clj)]
     (re-frame/dispatch [::set-auth-result auth-result-clj])
+    (re-frame/dispatch [::set-authenticated true])
     (.getUserInfo lock access-token handle-profile-response)))
 
 (.on lock "authenticated" on-authenticated)
@@ -29,8 +30,12 @@
 (re-frame/reg-event-db
     ::set-auth-result
   (fn [db [_ auth-result]]
-    (assoc-in db [:user :auth-result] auth-result)
-    (assoc db :authenticated true)))
+    (assoc-in db [:user :auth-result] auth-result)))
+
+(re-frame/reg-event-db
+    ::set-authenticated
+  (fn [db [_ authed]]
+    (assoc db :authenticated authed)))
 
 (re-frame/reg-event-db
     ::set-user-profile
