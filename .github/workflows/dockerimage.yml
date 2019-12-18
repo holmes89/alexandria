@@ -1,0 +1,17 @@
+name: Docker Image CI
+
+on: [push]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+     - name: Check out code into the Go module directory
+       uses: actions/checkout@v1
+       with:
+          path: "server" 
+     - name: Build the Docker image
+       run: docker build . --file server/Dockerfile --tag holmes89/alexandria-server:$(date +%s)
