@@ -9,7 +9,6 @@ import (
 
 type Config struct {
 	DatabaseType           string
-	SQLiteConfig           SQLiteDatabaseConfig
 	PostgresConfig         PostgresDatabaseConfig
 	BucketConnectionConfig BucketConfig
 }
@@ -23,17 +22,6 @@ func LoadConfig() Config {
 
 	logrus.WithField("type", dbType).Info("loading database config")
 	return *config
-}
-
-type SQLiteDatabaseConfig struct {
-	File string
-}
-
-func (c *Config) LoadSQLiteDatabaseConfig() SQLiteDatabaseConfig {
-	//TODO check file, maybe init
-	return SQLiteDatabaseConfig{
-		File: getEnv("DB_FILE", "books"),
-	}
 }
 
 type PostgresDatabaseConfig struct {

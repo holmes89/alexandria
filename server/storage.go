@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gocloud.dev/blob"
-	_ "gocloud.dev/blob/s3blob"
+	_ "gocloud.dev/blob/gcsblob"
 	"io"
 	"time"
 )

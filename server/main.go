@@ -29,9 +29,6 @@ func NewApp() *fx.App {
 
 	//TODO db type enum
 	switch config.DatabaseType {
-	case "sqlite":
-		providers = append(providers, config.LoadSQLiteDatabaseConfig)
-		providers = append(providers, NewSQLiteDatabase)
 	case "postgres":
 		providers = append(providers, config.LoadPostgresDatabaseConfig)
 		providers = append(providers, NewPostgresDatabase)
