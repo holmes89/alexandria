@@ -1,6 +1,6 @@
 FROM golang:1.13-alpine AS build-env
 WORKDIR "/alexandria"
-ADD  *.go *.mod *.sum ./
+ADD  server/*.go server/*.mod server/*.sum ./
 RUN apk update \
     && apk upgrade \
     && apk add git gcc musl-dev \
