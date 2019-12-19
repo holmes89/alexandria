@@ -13,5 +13,22 @@ jobs:
        uses: actions/checkout@v1
        with:
           path: "server" 
+          
+     - name: Authenticate into Google Cloud Platform
+       uses: actions/gcloud/auth@master
+       env:
+          GCLOUD_AUTH: ${{ secrets.GCLOUD_AUTH }}
+  
      - name: Build the Docker image
-       run: docker build . --file server/Dockerfile --tag holmes89/alexandria-server:$(date +%s)
+       run: docker build . --file server/Dockerfile --tag us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)
+
+     - name: Configure Docker to use Google Cloud Platform
+       uses: actions/gcloud/cli@master
+       with:
+        args: "auth configure-docker --quiet"
+
+     - name: Push image to Google Cloud Container Registry
+       uses: actions/gcloud/cli@master
+       with:
+        entrypoint: sh
+        args: -c "docker push us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)"
