@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
       with:
-          path: "server"
+          path: "ui"
     - name: Install dependencies
       run: lein deps
     - name: Yarn dependencies
