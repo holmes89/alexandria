@@ -1,6 +1,7 @@
 (ns alexandria.db
   (:require
-   [re-frame.core :as re-frame]))
+   [re-frame.core :as re-frame]
+   [cljs.reader :as reader]))
 
 ;; -- Local Storage  ----------------------------------------------------------
 ;;
@@ -36,7 +37,7 @@
     (assoc cofx ::local-store-user  ;; put the local-store user into the coeffect under :local-store-user
            (into (sorted-map)      ;; read in user from localstore, and process into a sorted map
                  (some->> (.getItem js/localStorage alex-user-key)
-                          (cljs.reader/read-string))))))  ;; EDN map -> map
+                          (reader/read-string))))))  ;; EDN map -> map
 
 (def default-db
   {:name "re-frame"
