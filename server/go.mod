@@ -3,6 +3,7 @@ module alexandria
 go 1.13
 
 require (
+	firebase.google.com/go v3.11.1+incompatible // indirect
 	github.com/Masterminds/squirrel v1.1.0
 	github.com/auth0/go-jwt-middleware v0.0.0-20190805220309-36081240882b
 	github.com/aws/aws-sdk-go v1.26.4 // indirect

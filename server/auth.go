@@ -30,11 +30,6 @@ var (
 func NewAuth0Authentication() *jwtmiddleware.JWTMiddleware {
 	return jwtmiddleware.New(jwtmiddleware.Options {
 		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-			// Verify 'aud' claim
-			//checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
-			//if !checkAud {
-			//	return token, errors.New("Invalid audience.")
-			//}
 			// Verify 'iss' claim
 			checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
 			if !checkIss {

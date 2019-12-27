@@ -19,11 +19,12 @@ func NewApp() *fx.App {
 	config := LoadConfig()
 	providers := []interface{}{
 		config.LoadBucketConfig,
-		NewBucketStorage,
+		NewGCPBucketStorage,
 		NewBucketDocumentStorage,
 		NewDocumentService,
 		NewBookService,
 		NewPaperService,
+		NewFirebaseApp,
 		NewMux,
 	}
 
@@ -33,6 +34,9 @@ func NewApp() *fx.App {
 		providers = append(providers, config.LoadPostgresDatabaseConfig)
 		providers = append(providers, NewPostgresDatabase)
 		providers = append(providers, NewPostgresDocumentRepository)
+	case "firebase":
+		providers = append(providers, NewFirestoreDatabase)
+		providers = append(providers, NewFirestoreDocumentRepository)
 	}
 	return fx.New(
 		fx.Provide(
@@ -54,14 +58,13 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 	//	STSSeconds:            31536000,
 	//})
 	router := mux.NewRouter()
-	auth := NewAuth0Authentication()
 
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"})
 	cors := handlers.CORS(originsOk, headersOk, methodsOk)
 
-	router.Use(cors, auth.Handler)
+	router.Use(cors)
 	handler := (cors)(router)
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {

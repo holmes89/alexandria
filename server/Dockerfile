@@ -3,11 +3,13 @@ WORKDIR "/alexandria"
 ADD  *.go *.mod *.sum ./
 RUN apk update \
     && apk upgrade \
-    && apk add git gcc musl-dev \
-    && go get ./... \
-    && CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -X main.docker=true" -o server .
+    && apk add git gcc musl-dev ca-certificates \
+    && rm -rf /var/cache/apk/*
+RUN go get ./...
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -X main.docker=true" -o server .
 
 FROM scratch
 ENV PORT 8080
 COPY --from=build-env /alexandria/server /
+COPY --from=build-env /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 CMD ["/server"]

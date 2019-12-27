@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gocloud.dev/blob"
+	"gocloud.dev/blob/gcsblob"
 	_ "gocloud.dev/blob/gcsblob"
+	"gocloud.dev/gcp"
 	"io"
+	"net/url"
 	"time"
 )
 
@@ -32,6 +36,46 @@ func NewBucketStorage(config BucketConfig) *BucketStorage {
 	bucket, err := blob.OpenBucket(context.Background(), config.ConnectionString)
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to connect to bucket")
+	}
+	return &BucketStorage{
+		Bucket: bucket,
+	}
+}
+
+func NewGCPBucketStorage(config BucketConfig) *BucketStorage {
+	ctx := context.Background()
+
+	urlString := config.ConnectionString
+	urlParts, _ := url.Parse(urlString)
+	// Your GCP credentials.
+	// See https://cloud.google.com/docs/authentication/production
+	// for more info on alternatives.
+	creds, err := gcp.DefaultCredentials(ctx)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	credsMap := make(map[string]string)
+	json.Unmarshal(creds.JSON, &credsMap)
+
+	opts := &gcsblob.Options{
+		GoogleAccessID: credsMap["client_id"],
+		PrivateKey: []byte(credsMap["private_key"]),
+	}
+	// Create an HTTP client.
+	// This example uses the default HTTP transport and the credentials
+	// created above.
+	client, err := gcp.NewHTTPClient(
+		gcp.DefaultTransport(),
+		gcp.CredentialsTokenSource(creds))
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	// Create a *blob.Bucket.
+	bucket, err := gcsblob.OpenBucket(ctx, client, urlParts.Host, opts)
+	if err != nil {
+		logrus.Fatal(err)
 	}
 	return &BucketStorage{
 		Bucket: bucket,

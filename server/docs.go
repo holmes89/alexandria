@@ -20,14 +20,14 @@ var (
 )
 
 type Document struct {
-	ID          string     `json:"id"`
-	DisplayName string     `json:"display_name"`
-	Name        string     `json:"name"`
-	Path        string     `json:"path"`
-	Type        string     `json:"type"`
-	Description string     `json:"description"`
-	Created     time.Time  `json:"created"`
-	Updated     *time.Time `json:"updated"`
+	ID          string     `json:"id" firestore:"id"`
+	DisplayName string     `json:"display_name" firestore:"display_name"`
+	Name        string     `json:"name" firestore:"name"`
+	Path        string     `json:"path" firestore:"path"`
+	Type        string     `json:"type" firestore:"type"`
+	Description string     `json:"description" firestore:"description"`
+	Created     time.Time  `json:"created" firestore:"created"`
+	Updated     *time.Time `json:"updated" firestore:"updated"`
 }
 
 type DocumentService interface {
@@ -49,6 +49,11 @@ type DocumentRepository interface {
 func NewPostgresDocumentRepository(database *PostgresDatabase) DocumentRepository {
 	return database
 }
+
+func NewFirestoreDocumentRepository(database *FirestoreDatabase) DocumentRepository {
+	return database
+}
+
 
 type documentService struct {
 	storage DocumentStorage
