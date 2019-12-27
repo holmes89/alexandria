@@ -1,0 +1,27 @@
+name: Clojure CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+          path: "server"
+    - name: Install dependencies
+      run: lein deps
+    - name: Yarn dependencies
+      run: yarn install
+    - name: Build Prod 
+      run: lein prod
+    - name: Authenticate into Google Cloud Platform
+      uses: actions/gcloud/auth@master
+      env:
+         GCLOUD_AUTH: ${{ secrets.GCLOUD_AUTH }}
+    - name: Sync with GCP
+      uses: actions/gcloud/cli@master
+      with:
+        args: "-m rsync -R resources/public gs://read.jholmestech.com"
