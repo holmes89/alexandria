@@ -8,7 +8,7 @@ RUN apk update \
 RUN go get ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -X main.docker=true" -o server .
 
-FROM scratch
+FROM scratch AS prod
 ENV PORT 8080
 COPY --from=build-env /alexandria/server /
 COPY --from=build-env /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
