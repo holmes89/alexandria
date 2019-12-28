@@ -31,4 +31,4 @@ jobs:
        run: "docker push us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)"
         
      - name: Install beta commands and deploy on cloud run
-       run: "gcloud beta run deploy alexandria-api --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east1 --quiet --platform managed"
+       run: "gcloud beta run deploy alexandria-api --quiet --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east1 --platform managed"
