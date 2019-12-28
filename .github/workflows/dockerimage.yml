@@ -22,7 +22,7 @@ jobs:
          service_account_key: ${{ secrets.GCLOUD_AUTH }} 
   
      - name: Build the Docker image
-       run: docker build . --file server/Dockerfile --tag us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)
+       run: docker build . --file server/Dockerfile --tag us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --target prod
 
      - name: Configure Docker to use Google Cloud Platform
        run: "gcloud auth configure-docker --quiet"
@@ -31,4 +31,4 @@ jobs:
        run: "docker push us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)"
         
      - name: Install beta commands and deploy on cloud run
-       run: "gcloud components install beta --quiet && gcloud beta run deploy alexandria-api --quiet --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east4 --platform managed"
+       run: "gcloud run deploy alexandria-api --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east4 --platform managed"
