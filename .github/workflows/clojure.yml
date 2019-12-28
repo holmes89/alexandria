@@ -25,6 +25,6 @@ jobs:
       env:
          GCLOUD_AUTH: ${{ secrets.GCLOUD_AUTH }}
     - name: Sync with GCP
-      uses: actions/gcloud/cli@master
+      uses: docker://gcr.io/cloud-builders/gsutil
       with:
         args: "-m rsync -R ./ui/resources/public gs://read.jholmestech.com"
