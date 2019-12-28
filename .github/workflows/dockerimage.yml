@@ -32,3 +32,8 @@ jobs:
        with:
         entrypoint: sh
         args: -c "docker push us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)"
+        
+     - name: Install beta commands and deploy on cloud run
+       uses: actions/gcloud/cli@master
+       with:
+          args: "components install beta --quiet && gcloud beta run deploy alexandria-api --quiet --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east4 --platform managed"
