@@ -14,10 +14,10 @@ type Config struct {
 }
 
 func LoadConfig() Config {
-	dbType := getEnv("DB_TYPE", "postgres")
+	dbType := getEnv("DB_TYPE", "firebase")
 
 	config := &Config{
-		DatabaseType: getEnv("DB_TYPE", "postgres"),
+		DatabaseType: getEnv("DB_TYPE", "firebase"),
 	}
 
 	logrus.WithField("type", dbType).Info("loading database config")
