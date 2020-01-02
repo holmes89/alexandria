@@ -10,4 +10,6 @@
                                                    re-frisk.preload]}}
                 :devtools        {:http-root    "resources/public"
                                   :http-port    8280
-                                  }}}}
+                                  }
+                :dev {:closure-defines {alexandria.config/baseurl "http://127.0.0.1:8080"}}
+                :release {:closure-defines {alexandria.config/baseurl "set-me"}}}}}

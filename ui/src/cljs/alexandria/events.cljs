@@ -1,4 +1,5 @@
 (ns alexandria.events
+  (:use [alexandria.config :only (baseurl)])
   (:require
    [ajax.core :as ajax]        
    [day8.re-frame.http-fx]
@@ -74,18 +75,18 @@
   [:Authorization (str "Bearer " token)]))
 
 (re-frame/reg-event-fx
-::get-documents
-(fn
-  [{db :db} _]
-  {:http-xhrio {:method          :get
-                :uri             "http://localhost:8080/documents/"
-                :headers         (auth-header db) 
-                :format          (ajax/json-request-format)
-                :response-format (ajax/json-response-format {:keywords? true}) 
-                :on-success      [::process-response]
-                :on-failure      [::bad-response]
-                }
-   :db  (assoc db :loading? true)}))
+    ::get-documents
+  (fn
+    [{db :db} _]
+    {:http-xhrio {:method          :get
+                  :uri             (str baseurl "/documents/")
+                  :headers         (auth-header db) 
+                  :format          (ajax/json-request-format)
+                  :response-format (ajax/json-response-format {:keywords? true}) 
+                  :on-success      [::process-response]
+                  :on-failure      [::bad-response]
+                  }
+     :db  (assoc db :loading? true)}))
 
 (re-frame/reg-event-db                   
 ::process-get-doc-by-id             
@@ -96,11 +97,11 @@
       (assoc :active-doc (js->clj response)))))
 
 (re-frame/reg-event-fx
-::get-document-by-id
+    ::get-document-by-id
   (fn
     [{db :db} [_ id]]
     {:http-xhrio {:method          :get
-                  :uri             (str "http://localhost:8080/documents/" id)
+                  :uri             (str baseurl "/documents/" id)
                   :headers         (auth-header db) 
                   :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
@@ -114,7 +115,7 @@
   (fn
     [{db :db} [_ form]]
     {:http-xhrio {:method          :post
-                  :uri             "http://localhost:8080/books/"
+                  :uri             (str baseurl "/books/")
                   :headers         (auth-header db) 
                   :body form
                   :response-format (ajax/json-response-format {:keywords? true}) 
@@ -128,7 +129,7 @@
   (fn
     [{db :db} [_ id]]
     {:http-xhrio {:method          :delete
-                  :uri             (str "http://localhost:8080/documents/" id)
+                  :uri             (str baseurl "/documents/" id)
                   :headers         (auth-header db) 
                   :format          (ajax/json-request-format)
                   :response-format (ajax/json-response-format {:keywords? true}) 
