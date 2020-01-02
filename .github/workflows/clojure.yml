@@ -18,7 +18,7 @@ jobs:
       run: yarn install
       working-directory: "./ui"
     - name: Build Prod 
-      run: lein prod
+      run: lein with-profile prod run -m shadow.cljs.devtools.cli release app --config-merge '{:closure-defines {alexandria.config/baseurl "https://alexandria-api-4josd7vm2q-ue.a.run.app"}}'
       working-directory: "./ui"
     - name: Authenticate into Google Cloud Platform
       uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
