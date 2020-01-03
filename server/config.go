@@ -55,11 +55,19 @@ func (c *Config) LoadPostgresDatabaseConfig() PostgresDatabaseConfig {
 
 type BucketConfig struct {
 	ConnectionString string
+	AccessID string
+	AccessKey string
 }
 
 func (c *Config) LoadBucketConfig() BucketConfig {
 	host := getEnv("BUCKET_HOST", "s3://my-books")
-	return BucketConfig{host}
+	accessID := os.Getenv("ACCESS_ID")
+	key := os.Getenv("ACCESS_KEY")
+	return BucketConfig{
+		ConnectionString: host,
+		AccessID: accessID,
+		AccessKey: key,
+	}
 }
 
 func getEnv(env, fallback string) string {

@@ -42,6 +42,7 @@ func NewBucketStorage(config BucketConfig) *BucketStorage {
 	}
 }
 
+// TODO redo this to pass in variables
 func NewGCPBucketStorage(config BucketConfig) *BucketStorage {
 	ctx := context.Background()
 
@@ -55,12 +56,20 @@ func NewGCPBucketStorage(config BucketConfig) *BucketStorage {
 		logrus.Fatal(err)
 	}
 
-	credsMap := make(map[string]string)
-	json.Unmarshal(creds.JSON, &credsMap)
+	accessID := config.AccessID
+	accessKey := config.AccessKey
+
+	if accessID == "" || accessKey == "" {
+		logrus.Warn("unable to find access information using default credentials")
+		credsMap := make(map[string]string)
+		json.Unmarshal(creds.JSON, &credsMap)
+		accessID = credsMap["client_id"]
+		accessKey = credsMap["private_key"]
+	}
 
 	opts := &gcsblob.Options{
-		GoogleAccessID: credsMap["client_id"],
-		PrivateKey: []byte(credsMap["private_key"]),
+		GoogleAccessID: accessID,
+		PrivateKey: []byte(accessKey),
 	}
 	// Create an HTTP client.
 	// This example uses the default HTTP transport and the credentials
