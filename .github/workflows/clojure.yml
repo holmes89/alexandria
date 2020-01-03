@@ -1,7 +1,11 @@
 name: Clojure CI
 
-on: [push]
-
+on:
+  push:
+    paths:
+      - 'ui/**'
+    branches:
+      - master
 jobs:
   build:
 

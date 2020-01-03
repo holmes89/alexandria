@@ -1,6 +1,11 @@
 name: API
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'server/**'
+    branches:
+      - master
 
 jobs:
 
