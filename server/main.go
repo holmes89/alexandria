@@ -64,7 +64,8 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"})
 	cors := handlers.CORS(originsOk, headersOk, methodsOk)
 
-	router.Use(cors)
+	auth := NewAuth0Authentication()
+	router.Use(cors, auth.Handler)
 	handler := (cors)(router)
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
