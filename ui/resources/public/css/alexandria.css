@@ -26,14 +26,6 @@ h1.main-title {
   margin-bottom: 25px;
 }
 
-/* Doc Panel */
-.doc-info {
-  width: 100%;
-}
-
-.doc-info svg {
-  margin-right: 15px;
-}
 
 
 /* Read Panel */
@@ -94,4 +86,15 @@ a.page-turn .fa-arrow-left{
 #read-bar h3.book-title {
   font-family: 'Merriweather', sans-serif;
   font-size: 18px;
+}
+
+a.card-footer-item .fa-book-open {
+  margin-right: 10px;
+}
+
+
+header.card-header > p.card-header-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

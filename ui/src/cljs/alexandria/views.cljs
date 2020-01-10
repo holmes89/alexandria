@@ -4,8 +4,7 @@
    [alexandria.subs :as subs]
    [alexandria.events :as events]
    [react-pdf :as pdf]
-   [clojure.string :as str]
-   [alexandria.auth0 :as auth0]))
+   [clojure.string :as str]))
 
 
 ;; shared components
@@ -14,23 +13,6 @@
    {:on-click on-click}
    text])
 
-(def login-button
-  [:div.navbar-item
-   [:a {:on-click #(.show auth0/lock)}
-    [:div
-     [:i.fas.fa-sign-in-alt]]]])
-
-(def logout-button
-  [:a.navbar-item {:on-click #(re-frame/dispatch [::auth0/logout])} "Log out"])
-
-(defn nav-profile
-  []
-  (let [profile-image (re-frame/subscribe [::auth0/profile-image])]
-    [:div.navbar-item.has-dropdown.is-hoverable
-     [:a.navbar-link.is-arrowless
-      [:img {:src @profile-image}]]
-     [:div.navbar-dropdown.is-right
-      logout-button]]))
 
 (defn navbar []
   [:nav.navbar.is-light {:role "navigation" :aria-label "main navigation"}
@@ -38,13 +20,7 @@
     [:div.navbar-item
      [:span
       "Alexandria"
-      [:img {:src "/assets/alexandria.png"}]]]]
-   [:div.navbar-menu
-    [:div.navbar-end
-     (let [authenticated (re-frame/subscribe [::auth0/authenticated])]
-       (if @authenticated
-         (nav-profile)
-         login-button))]]])
+      [:img {:src "/assets/alexandria.png"}]]]]])
 
 ;; home
 (defn file-upload-name []
@@ -91,34 +67,47 @@
     [:i.fas.fa-book]
     [:i.fas.fa-file-alt]))
 
-(defn doc-item
-  [{:keys [id display_name type]}]
-  [:div.panel-block
-   [:div.doc-info [doc-icon type]
-    display_name
-    [:span.icons.is-pulled-right
-     [:a {:href (str "#/documents/" id)} [:i.fas.fa-book-open]]
-     [:a {:on-click #(re-frame/dispatch [::events/delete-document-by-id id])} [:i.fas.fa-times]]]]])
+(defn doc-card
+  [{:keys [id display_name type description]}]
+  [:div.card
+   [:header.card-header
+    [:p.card-header-icon
+     [:span.icon [doc-icon type]]]
+    [:p.card-header-title display_name]]
+   ;;[:div.card-content description]
+   [:footer.card-footer
+    [:a.card-footer-item {:href (str "#/documents/" id)} [:i.fas.fa-book-open] "Read"]]])
 
-
-(defn doc-list []
+(defn doc-card-grid []
   (let [docs (re-frame/subscribe [::subs/docs])]
     (fn []
-      [:div.columns.is-mobile
-       [:div.column.is-6.is-offset-3
-        [:nav.panel
-         [:p.panel-heading "Documents"]
-         (for [doc @docs]
-           ^{:key (:id doc)}[doc-item doc])]]])))
+      [:div.columns.is-mobile.is-multiline
+       (for [doc @docs]
+         ^{:key (:id doc)}
+         [:div.column.is-one-third
+          [doc-card doc]])])))
 
+
+(defn add-button []
+  [:div.is-pulled-right
+   [:button.button.is-rounded.is-info {:on-click #(re-frame/dispatch [::events/show-upload-modal])}
+    [:span.icon
+     [:i.fas.fa-plus]]
+    [:span "Add"]]])
 
 (defn authenticated-body []
   (re-frame/dispatch [::events/get-documents])
   [:div
-   [:a {:on-click #(re-frame/dispatch [::events/show-upload-modal])}
-    [:i.fas.fa-plus] "Add"]
-   [doc-list]
-   (upload-modal)])
+   [:section.section
+    [:div.container
+     [:div.columns.is-mobile
+      [:div.column.is-6.is-offset-3
+       [:input.input {:type "text" :placeholder "Search"}]]
+      [:div.column.is-1.is-offset-2 (add-button)]]]]
+   [:section.section
+    [:div.container
+     [doc-card-grid]
+     (upload-modal)]]])
 
 (defn unauthenticated-body []
   [:div
@@ -126,13 +115,10 @@
    [:div "A self managed library of documents"]])
 
 (defn home-panel []
-  (let [name (re-frame/subscribe [::subs/name])
-        authed? (re-frame/subscribe [::auth0/authenticated])]
+  (let [name (re-frame/subscribe [::subs/name])]
     [:div
      (navbar)
-     (if @authed?
-       (authenticated-body)
-       (unauthenticated-body))]))
+     (authenticated-body)]))
 
 
 ;; read
