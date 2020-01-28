@@ -1,4 +1,4 @@
-name: API
+name: Cover Gen
 
 on:
   push:
