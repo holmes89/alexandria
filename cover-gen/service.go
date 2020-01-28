@@ -37,15 +37,23 @@ func (s *Service) CreateCover(id string, path string) error {
 	}
 	r.Close()
 
-	logrus.WithField("id", id).Info("processing")
+	logrus.WithField("id", id).Info("extracting cover")
 	// Generate image
 	//gs -sDEVICE=jpeg -dPDFFitPage=true -dDEVICEWIDTHPOINTS=250 -dDEVICEHEIGHTPOINTS=250 -sOutputFile=outputfile.jpeg inputfile.pdf
-	args := []string{"-sDEVICE=jpeg","-dPDFFitPage=true","-dDEVICEWIDTHPOINTS=250","-dDEVICEHEIGHTPOINTS=250",fmt.Sprintf("-sOutputFile=/tmp/%s.jpg", id),file.Name()}
+	args := []string{"-sDEVICE=jpeg","-dPDFFitPage=true","-dDEVICEWIDTHPOINTS=350","-dDEVICEHEIGHTPOINTS=350",fmt.Sprintf("-sOutputFile=/tmp/%s.jpg", id),file.Name()}
 
 	cmd := exec.Command("gs", args...)
 	if err := cmd.Run(); err != nil {
 		logrus.WithError(err).Error("unable to create thumbnail")
 		return errors.New("unable to create thumbnail")
+	}
+
+	logrus.WithField("id", id).Info("optimizing jpg")
+
+	cmd = exec.Command("jpegoptim", fmt.Sprintf("%s.jpg", id))
+	if err := cmd.Run(); err != nil {
+		logrus.WithError(err).Error("unable to optimize jpg")
+		return errors.New("unable to optimize jpg")
 	}
 
 	if err := file.Close(); err != nil {

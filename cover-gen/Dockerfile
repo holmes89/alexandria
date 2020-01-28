@@ -3,7 +3,7 @@ WORKDIR "/covergen"
 ADD cover-gen/*.go cover-gen/*.mod cover-gen/*.sum ./
 RUN apk update \
     && apk upgrade \
-    && apk add git gcc musl-dev ca-certificates ghostscript \
+    && apk add git gcc musl-dev ca-certificates ghostscript jpegoptim \
     && rm -rf /var/cache/apk/*
 RUN go get ./...
 ENV PORT 8080
