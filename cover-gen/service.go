@@ -50,7 +50,7 @@ func (s *Service) CreateCover(id string, path string) error {
 
 	logrus.WithField("id", id).Info("optimizing jpg")
 
-	cmd = exec.Command("jpegoptim", fmt.Sprintf("%s.jpg", id))
+	cmd = exec.Command("jpegoptim", fmt.Sprintf("/tmp/%s.jpg", id))
 	if err := cmd.Run(); err != nil {
 		logrus.WithError(err).Error("unable to optimize jpg")
 		return errors.New("unable to optimize jpg")
