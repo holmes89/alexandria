@@ -67,6 +67,8 @@
     [:i.fas.fa-book]
     [:i.fas.fa-file-alt]))
 
+
+
 (defn doc-card
   [{:keys [id display_name type description]}]
   [:div.card
@@ -74,7 +76,8 @@
     [:p.card-header-icon
      [:span.icon [doc-icon type]]]
     [:p.card-header-title display_name]]
-   ;;[:div.card-content description]
+   [:div.card-content {:style {:text-align "center"}}
+    [:img {:src (str "http://read.jholmestech.com/assets/covers/" id ".jpg") :style {:max-width "300px"}}]]
    [:footer.card-footer
     [:a.card-footer-item {:href (str "#/documents/" id)} [:i.fas.fa-book-open] "Read"]]])
 
@@ -84,7 +87,7 @@
       [:div.columns.is-mobile.is-multiline
        (for [doc @docs]
          ^{:key (:id doc)}
-         [:div.column.is-one-third
+         [:div.column.is-one-quarter
           [doc-card doc]])])))
 
 
