@@ -4,7 +4,8 @@
    [alexandria.subs :as subs]
    [alexandria.events :as events]
    [react-pdf :as pdf]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [alexandria.fb :as fb]))
 
 
 ;; shared components
@@ -13,6 +14,24 @@
    {:on-click on-click}
    text])
 
+(def login-button
+  [:div.navbar-item
+   [:a {:on-click fb.sign-in-with-github}
+    [:div
+     [:i.fas.fa-sign-in-alt]]]])
+
+(def logout-button
+  [:a.navbar-item {:on-click fb.sign-out} "Log out"])
+
+(defn nav-profile
+  []
+  ;; todo subscribe 
+  (let [profile-image (re-frame/subscribe [::fb/profile-image])]
+    [:div.navbar-item.has-dropdown.is-hoverable
+     [:a.navbar-link.is-arrowless
+      [:img {:src @profile-image}]]
+     [:div.navbar-dropdown.is-right
+      logout-button]]))
 
 (defn navbar []
   [:nav.navbar.is-light {:role "navigation" :aria-label "main navigation"}
@@ -20,7 +39,13 @@
     [:div.navbar-item
      [:span
       "Alexandria"
-      [:img {:src "/assets/alexandria.png"}]]]]])
+      [:img {:src "/assets/alexandria.png"}]]]]
+   [:div.navbar-menu
+    [:div.navbar-end
+     (let [authenticated (re-frame/subscribe [::fb/authenticated])]
+       (if @authenticated
+         (nav-profile)
+         login-button))]]])
 
 ;; home
 (defn file-upload-name []
