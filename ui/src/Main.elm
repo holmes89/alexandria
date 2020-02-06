@@ -2,10 +2,12 @@ module Main exposing(..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (class, style, src, href)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, string)
+import Json.Decode as Decode exposing (Decoder, field, string)
+import Json.Decode.Pipeline exposing (required, optional)
+
 
 -- MAIN
 
@@ -109,7 +111,7 @@ viewBooks model =
                   img [src ("http://read.jholmestech.com/assets/covers/"++l.id++".jpg"), style "max-width" "300px"] []
                 ],
                 footer [class "card-footer"] [
-                  a [class "card-footer-item", href "#"] [i [class "fas", class "fa-book-open"] [text "Read"]]
+                  a [class "card-footer-item", href "#"] [i [class "fas", class "fa-book-open"] [], text "Read"]
                 ]
               ]
             ]) docs)
@@ -128,8 +130,10 @@ getBook =
 type alias Book = {id : String, displayName : String}
 bookDecoder : Decoder Book
 bookDecoder =
-  Json.Decode.map2 Book (field "id" string) (field "display_name" string)
+  Decode.succeed Book
+    |> required "id" string
+    |> required "display_name" string
 
 listBookDecoder : Decoder (List Book)
 listBookDecoder =
-  Json.Decode.list bookDecoder
+  Decode.list bookDecoder

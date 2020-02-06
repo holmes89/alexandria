@@ -6114,13 +6114,25 @@ var $author$project$Main$Book = F2(
 	function (id, displayName) {
 		return {displayName: displayName, id: id};
 	});
+var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = $elm$json$Json$Decode$map2($elm$core$Basics$apR);
 var $elm$json$Json$Decode$field = _Json_decodeField;
+var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2($elm$json$Json$Decode$field, key, valDecoder),
+			decoder);
+	});
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Main$bookDecoder = A3(
-	$elm$json$Json$Decode$map2,
-	$author$project$Main$Book,
-	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'display_name', $elm$json$Json$Decode$string));
+	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'display_name',
+	$elm$json$Json$Decode$string,
+	A3(
+		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'id',
+		$elm$json$Json$Decode$string,
+		$elm$json$Json$Decode$succeed($author$project$Main$Book)));
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$Main$listBookDecoder = $elm$json$Json$Decode$list($author$project$Main$bookDecoder);
 var $author$project$Main$getBook = $elm$http$Http$get(
@@ -6292,10 +6304,8 @@ var $author$project$Main$viewBooks = function (model) {
 																	$elm$html$Html$Attributes$class('fas'),
 																	$elm$html$Html$Attributes$class('fa-book-open')
 																]),
-															_List_fromArray(
-																[
-																	$elm$html$Html$text('Read')
-																]))
+															_List_Nil),
+															$elm$html$Html$text('Read')
 														]))
 												]))
 										]))
