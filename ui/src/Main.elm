@@ -39,15 +39,12 @@ init _ =
 
 
 type Msg
-  = MorePlease
-  | GotBook (Result Http.Error (List Book))
+  =  GotBook (Result Http.Error (List Book))
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    MorePlease ->
-      (Loading, getBook)
 
     GotBook result ->
       case result of
@@ -74,13 +71,24 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div []
-    [ h2 [] [ text "Books" ]
-    , viewBook model
+    [ nav [class "navbar", class "is-light"] [
+      div [class "navbar-brand"] [
+          div [class "navbar-item"] [
+            span [] [text "Alexandria", img [src "/assets/alexandria.png"] []]
+          ]
+        ]
+      ]
+    , div [] [
+      section [class "section"] [
+        div [class "container"] [
+          viewBooks model
+        ]
+      ]
     ]
+  ]
 
-
-viewBook : Model -> Html Msg
-viewBook model =
+viewBooks : Model -> Html Msg
+viewBooks model =
   case model of
     Failure ->
       div []
@@ -91,9 +99,20 @@ viewBook model =
       text "Loading..."
 
     Success docs ->
-      div []
-        (List.map(\l -> div [] [text l.displayName]) docs)
-
+        div [class "columns", class "is-mobile", class "is-multiline"]
+            (List.map(\l -> div [class "column", class "is-one-quarter"] [
+              div [class "card"] [
+                header [class "card-header"] [
+                  p [class "card-header-title"] [text l.displayName]
+                ],
+                div [class "card-content", style "text-align" "center"] [
+                  img [src ("http://read.jholmestech.com/assets/covers/"++l.id++".jpg"), style "max-width" "300px"] []
+                ],
+                footer [class "card-footer"] [
+                  a [class "card-footer-item", href "#"] [i [class "fas", class "fa-book-open"] [text "Read"]]
+                ]
+              ]
+            ]) docs)
 
 
 -- HTTP
