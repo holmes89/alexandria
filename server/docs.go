@@ -126,13 +126,16 @@ func (s *documentService) CreateCover(id, path string) {
 		logrus.Panic("cover endpoint not set")
 	}
 
-	logrus.Infof("calling %s", url)
+
 	if !strings.Contains(url, "http") {
 		url = "https" + url
 	}
+	url = url+"/thumbnail/"
 	client := resty.New()
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
+
+	logrus.Infof("calling %s", url)
 	resp, err := client.
 		R().
 		SetBody(coverRequest{ID:id, Path: path}).
