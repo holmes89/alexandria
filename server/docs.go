@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype"
 	"github.com/h2non/filetype/matchers"
@@ -9,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
@@ -113,8 +115,45 @@ func (s *documentService) Add(ctx context.Context, file multipart.File, doc *Doc
 		return errors.Wrap(err, "failed to store data in repo")
 	}
 
+	go s.CreateCover(doc.ID, doc.Path)
 	return nil
 }
+
+func (s *documentService) CreateCover(id, path string) {
+	url := getEnv("COVER_ENDPOINT", "")
+	if url == "" {
+		logrus.Panic("cover endpoint not set")
+	}
+
+	resp, err := resty.New().
+		R().
+		SetBody(coverRequest{ID:id, Path: path}).
+		Post(url)
+
+	if err != nil {
+		logrus.WithError(err).Error("unable to create cover")
+		return
+	}
+	if err := resp.Error(); err != nil {
+		logrus.WithField("err", err).Error("unable to create cover")
+		return
+	}
+
+
+	if resp.StatusCode() != http.StatusCreated {
+		logrus.WithField("code", resp.StatusCode()).Error("request failed")
+		return
+	}
+
+	logrus.Info("cover created")
+}
+
+
+type coverRequest struct {
+	ID string `json:"id"`
+	Path string `json:"path"`
+}
+
 
 func (s *documentService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)

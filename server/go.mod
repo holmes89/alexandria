@@ -8,6 +8,7 @@ require (
 	github.com/auth0/go-jwt-middleware v0.0.0-20190805220309-36081240882b
 	github.com/aws/aws-sdk-go v1.26.4 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-resty/resty/v2 v2.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/google/wire v0.4.0 // indirect

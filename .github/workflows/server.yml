@@ -34,4 +34,4 @@ jobs:
        run: "docker push us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)"
         
      - name: Install beta commands and deploy on cloud run
-       run: "gcloud components install beta --quiet && gcloud beta run deploy alexandria-api --quiet --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east1 --platform managed --update-env-vars ISS=${{ secrets.ISS}},BUCKET_HOST=${{ secrets.BUCKET_HOST}},ACCESS_ID=${{ secrets.ACCESS_ID }},ACCESS_KEY=\"${{ secrets.ACCESS_KEY }}\""
+       run: "gcloud components install beta --quiet && gcloud beta run deploy alexandria-api --quiet --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east1 --platform managed --update-env-vars ISS=${{ secrets.ISS}},COVER_ENDPOINT=$${{ secrets.COVER_ENDPOINT }},BUCKET_HOST=${{ secrets.BUCKET_HOST}},ACCESS_ID=${{ secrets.ACCESS_ID }},ACCESS_KEY=\"${{ secrets.ACCESS_KEY }}\""
