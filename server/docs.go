@@ -125,6 +125,11 @@ func (s *documentService) CreateCover(id, path string) {
 	if url == "" {
 		logrus.Panic("cover endpoint not set")
 	}
+
+	logrus.Infof("calling %s", url)
+	if !strings.Contains(url, "http") {
+		url = "https" + url
+	}
 	client := resty.New()
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
