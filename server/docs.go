@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype"
@@ -124,8 +125,10 @@ func (s *documentService) CreateCover(id, path string) {
 	if url == "" {
 		logrus.Panic("cover endpoint not set")
 	}
+	client := resty.New()
+	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
-	resp, err := resty.New().
+	resp, err := client.
 		R().
 		SetBody(coverRequest{ID:id, Path: path}).
 		Post(url)
