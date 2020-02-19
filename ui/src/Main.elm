@@ -76,7 +76,7 @@ view model =
     [ nav [class "navbar", class "is-light"] [
       div [class "navbar-brand"] [
           div [class "navbar-item"] [
-            span [] [text "Alexandria", img [src "/assets/alexandria.png"] []]
+            span [] [text "Alexandria", img [src "/alexandria.png"] []]
           ]
         ]
       ]
