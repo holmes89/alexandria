@@ -25,41 +25,47 @@ import (
 	"fmt"
 	"github.com/Holmes89/alexandria/mind/internal"
 	"github.com/spf13/cobra"
+	"io"
 	"os"
+	"text/tabwriter"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	cfgFile    string
+	app        *internal.App
+	out        io.Writer
+	uploadPath string
+	name       string
+	debug      bool
+)
 
-var app *internal.App
+func getTabWriter() *tabwriter.Writer {
+	return tabwriter.NewWriter(out, 0, 0, 4, ' ', 0)
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "mind",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
+	Short: "Tool to support my brain",
+	Long: `I have lots of elements of things I want to keep track of map and trace. 
+This tool should help me achieve some level of organization to support the growth of ideas and planning.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(out, err)
 		os.Exit(1)
 	}
 }
 
 func init() {
+	// init config and writer, could support file io in the future
+	initWriter()
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
@@ -67,10 +73,15 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.mind.yaml)")
-
+	rootCmd.PersistentFlags().BoolVar(&debug, "verbose", false, "extra debug information used")
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+}
+
+func initWriter() {
+	out = os.Stdout
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -82,7 +93,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(out, err)
 			os.Exit(1)
 		}
 
@@ -90,7 +101,7 @@ func initConfig() {
 		if _, err := os.Stat(configFile); os.IsNotExist(err) {
 			file, err := os.Create(configFile)
 			if err != nil {
-				fmt.Println("unable to create config file")
+				fmt.Fprintln(out, "unable to create config file")
 				os.Exit(1)
 			}
 			fmt.Println(file.Name())
@@ -105,12 +116,15 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		if debug {
+			fmt.Fprintln(out, "Using config file:", viper.ConfigFileUsed())
+		}
+
 	}
 
 	app = &internal.App{}
 	if err := viper.Unmarshal(app); err != nil {
-		fmt.Println("unable to load config")
+		fmt.Fprintln(out, "unable to load config")
 		os.Exit(1)
 	}
 

@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -29,29 +30,23 @@ import (
 
 // downloadBookCmd represents the downloadBook command
 var downloadBookCmd = &cobra.Command{
-	Use:   "downloadBook",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("downloadBook called")
+	Use:        "book",
+	Short:      "Download book from server",
+	Long:       `Given an ID save the file to the file system.`,
+	Args:       cobra.ExactArgs(1),
+	ArgAliases: []string{"id"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := app.DownloadDocument(args[0]); err != nil {
+			if debug {
+				fmt.Fprintln(out, err)
+			}
+			return errors.New("unable to download file")
+		}
+		fmt.Fprintln(out, "successfully downloaded book")
+		return nil
 	},
 }
 
 func init() {
 	downloadCmd.AddCommand(downloadBookCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// downloadBookCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// downloadBookCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

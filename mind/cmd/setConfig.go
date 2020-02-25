@@ -22,31 +22,28 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
 // setConfigCmd represents the setConfig command
 var setConfigCmd = &cobra.Command{
-	Use:   "set",
-	Short: "Set configuration value",
-	Long: `Allow for custom configuration of the application. Currently only ability to set endpoint`,
-	Args: cobra.ExactArgs(2),
+	Use:        "set",
+	Short:      "Set configuration value",
+	Long:       `Allow for custom configuration of the application. Currently only ability to set endpoint`,
+	Args:       cobra.ExactArgs(2),
 	ArgAliases: []string{"key", "value"},
-	RunE: func(cmd *cobra.Command, args []string) error{
-		return app.SetConfigurationValue(args[0], args[1])
+	RunE: func(cmd *cobra.Command, args []string) error {
+		key, value := args[0], args[1]
+		if err := app.SetConfigurationValue(key, value); err != nil {
+			return errors.New("unable to set key")
+		}
+		fmt.Fprintf(out, "set value for %s\n", key)
+		return nil
 	},
 }
 
 func init() {
 	configCmd.AddCommand(setConfigCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// setConfigCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// setConfigCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

@@ -22,36 +22,62 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/cobra"
 )
 
 // getBookCmd represents the getBook command
 var getBookCmd = &cobra.Command{
-	Use:   "getBook",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "book",
+	Short: "Fetch list of books or single book information",
+	Long: `List out all books in library or details on a specific book. List will give you high level information
+			like name and upload date.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("getBook called")
+			Detailed information will reflect all known information about the book. This will need to be done by ID.
+
+			Note: this is all "documents" currently in the future I should distinguish between papers and books`,
+	Args:       cobra.MaximumNArgs(1),
+	ArgAliases: []string{"id"},
+	Aliases:    []string{"books"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			results, err := app.FindDocuments()
+			if err != nil {
+				if debug {
+					errString := fmt.Errorf("error: %w", err)
+					fmt.Fprintln(out, errString.Error())
+				}
+				return errors.New("unable to fetch books")
+			}
+			tw := getTabWriter()
+			fmt.Fprintf(tw, "\n %s\t%s\t", "ID", "NAME")
+			for _, r := range results {
+				fmt.Fprintf(tw, "\n %s\t%s\t", r.ID, r.DisplayName)
+			}
+			fmt.Fprintf(tw, "\n\n")
+			tw.Flush()
+		} else {
+			results, err := app.FindDocumentByID(args[0])
+			if err != nil {
+				if debug {
+					errString := fmt.Errorf("error: %w", err)
+					fmt.Fprintln(out, errString.Error())
+				}
+				return errors.New("unable to fetch book")
+			}
+			if results == nil {
+				return errors.New("book does not exist")
+			}
+			b, _ := yaml.Marshal(results)
+			fmt.Fprintln(out, string(b))
+		}
+		return nil
 	},
 }
 
 func init() {
 	getCmd.AddCommand(getBookCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// getBookCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// getBookCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

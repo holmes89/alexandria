@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -29,29 +30,26 @@ import (
 
 // addBookCmd represents the addBook command
 var addBookCmd = &cobra.Command{
-	Use:   "addBook",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("addBook called")
+	Use:   "book",
+	Short: "Upload book to the service",
+	Long:  `Add book to library from local file system providing a path and a name.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := app.UploadBook(uploadPath, name); err != nil {
+			if debug {
+				fmt.Fprintln(out, err.Error())
+			}
+			return errors.New("unable to upload file")
+		}
+		fmt.Fprintln(out, "file successfully uploaded")
+		return nil
 	},
 }
 
 func init() {
 	addCmd.AddCommand(addBookCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// addBookCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// addBookCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	addBookCmd.Flags().StringVarP(&uploadPath, "path", "p", "", "filepath to upload")
+	addBookCmd.Flags().StringVarP(&name, "name", "n", "", "display name of the file")
+	addBookCmd.MarkFlagRequired("path")
+	addBookCmd.MarkFlagRequired("name")
 }

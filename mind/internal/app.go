@@ -7,9 +7,8 @@ import (
 
 type App struct {
 	Endpoint string
-	Config *viper.Viper
+	Config   *viper.Viper
 }
-
 
 func (app *App) SetConfigurationValue(key, value string) error {
 	switch key {
