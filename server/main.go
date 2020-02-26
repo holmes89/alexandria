@@ -35,7 +35,7 @@ func NewApp() *fx.App {
 		providers = append(providers, NewPostgresDatabase)
 		providers = append(providers, NewPostgresDocumentRepository)
 	case "firebase":
-		providers = append(providers, NewFirestoreDatabase)
+		providers = append(providers, NewDocumentsFirestoreDatabase)
 		providers = append(providers, NewFirestoreDocumentRepository)
 	}
 	return fx.New(

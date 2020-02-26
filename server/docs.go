@@ -53,7 +53,7 @@ func NewPostgresDocumentRepository(database *PostgresDatabase) DocumentRepositor
 	return database
 }
 
-func NewFirestoreDocumentRepository(database *FirestoreDatabase) DocumentRepository {
+func NewFirestoreDocumentRepository(database *DocumentsFirestoreDatabase) DocumentRepository {
 	return database
 }
 

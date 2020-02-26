@@ -9,7 +9,10 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-const documentCollection = "documents"
+const (
+	documentCollection = "documents"
+	userCollection = "users"
+)
 
 func NewFirebaseApp() *firebase.App {
 	app, err := firebase.NewApp(context.Background(), nil)
@@ -19,21 +22,21 @@ func NewFirebaseApp() *firebase.App {
 	return app
 }
 
-type FirestoreDatabase struct {
+type DocumentsFirestoreDatabase struct {
 	client *firestore.Client
 }
 
-func NewFirestoreDatabase(app *firebase.App) *FirestoreDatabase {
+func NewDocumentsFirestoreDatabase(app *firebase.App) *DocumentsFirestoreDatabase {
 	client, err := app.Firestore(context.Background())
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to create firestore client")
 	}
-	return &FirestoreDatabase{
+	return &DocumentsFirestoreDatabase{
 		client: client,
 	}
 }
 
-func (r *FirestoreDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*Document, err error) {
+func (r *DocumentsFirestoreDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*Document, err error) {
 	docIter := r.client.Collection(documentCollection).Documents(ctx)
 	for {
 		d, err := docIter.Next()
@@ -54,7 +57,7 @@ func (r *FirestoreDatabase) FindAll(ctx context.Context, filter map[string]inter
 	return docs, nil
 }
 
-func (r *FirestoreDatabase) FindByID(ctx context.Context, id string) (*Document, error) {
+func (r *DocumentsFirestoreDatabase) FindByID(ctx context.Context, id string) (*Document, error) {
 	d, err := r.client.Collection(documentCollection).Doc(id).Get(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch document")
@@ -68,7 +71,7 @@ func (r *FirestoreDatabase) FindByID(ctx context.Context, id string) (*Document,
 	return entity, nil
 }
 
-func (r *FirestoreDatabase) Insert(ctx context.Context, doc *Document) error {
+func (r *DocumentsFirestoreDatabase) Insert(ctx context.Context, doc *Document) error {
 	_, err := r.client.Collection(documentCollection).Doc(doc.ID).Set(ctx, doc)
 	if err != nil {
 		logrus.WithError(err).Error("unable to insert document")
@@ -77,7 +80,7 @@ func (r *FirestoreDatabase) Insert(ctx context.Context, doc *Document) error {
 	return nil
 }
 
-func (r *FirestoreDatabase) UpsertStream(ctx context.Context, input <-chan *Document) error {
+func (r *DocumentsFirestoreDatabase) UpsertStream(ctx context.Context, input <-chan *Document) error {
 	count := 0
 	for doc := range input {
 		//Because I'm lazy I'm going to just add
@@ -92,11 +95,40 @@ func (r *FirestoreDatabase) UpsertStream(ctx context.Context, input <-chan *Docu
 	return nil
 }
 
-func (r *FirestoreDatabase) Delete(ctx context.Context, id string) error {
+func (r *DocumentsFirestoreDatabase) Delete(ctx context.Context, id string) error {
 	_, err := r.client.Collection(documentCollection).Doc(id).Delete(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("unable to delete document")
 		return errors.New("failed ot delete document")
 	}
 	return nil
+}
+
+type UserFirestoreDatabase struct {
+	client *firestore.Client
+}
+
+func NewUserFirestoreDatabase(app *firebase.App) *UserFirestoreDatabase {
+	client, err := app.Firestore(context.Background())
+	if err != nil {
+		logrus.WithError(err).Fatal("unable to create firestore client")
+	}
+	return &UserFirestoreDatabase{
+		client: client,
+	}
+}
+
+func (r *UserFirestoreDatabase) FindUserByUsername(ctx context.Context, username string) (*User, error){
+	d, err := r.client.Collection(userCollection).Where("username", "==", username).Documents(ctx).Next()
+	if err != nil {
+		logrus.WithError(err).Error("failed to find user")
+		return nil, errors.New("unable of find user")
+	}
+
+	entity := &User{}
+	if err := d.DataTo(entity); err != nil {
+		logrus.WithError(err).Error("unable to convert entity")
+		return nil, errors.New("unable to convert entity")
+	}
+	return entity, nil
 }

@@ -24,6 +24,7 @@ require (
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/fx v1.10.0
 	gocloud.dev v0.18.0
+	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553 // indirect
 	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449 // indirect
