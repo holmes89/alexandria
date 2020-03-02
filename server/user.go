@@ -58,6 +58,9 @@ func NewUserService(repo UserRepository) UserService {
 	}
 
 	logrus.Info("checking it see if user exists")
+	if defaultuser == "" {
+		logrus.Fatal("default username not set")
+	}
 	ctx := context.Background()
 	user, err := repo.FindUserByUsername(ctx, defaultuser)
 	if err != nil {
@@ -65,6 +68,9 @@ func NewUserService(repo UserRepository) UserService {
 	}
 	if user == nil {
 		logrus.Info("default user does not exist creating")
+		if defaultpassword == "" {
+			logrus.Fatal("default username not set")
+		}
 		if err := s.createUser(ctx, defaultuser, defaultpassword); err != nil {
 			logrus.WithError(err).Fatal("unable to create default user")
 		}
@@ -144,5 +150,5 @@ func (s *userService) getToken(user *User, expiration time.Time) (string, error)
 	claims["exp"] = expiration.Unix()
 
 	// Sign the token with our secret
-	return token.SignedString(key)
+	return token.SignedString([]byte(key))
 }

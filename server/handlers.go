@@ -229,22 +229,21 @@ type loginHandler struct {
 }
 
 func MakeLoginHandler(mr *mux.Router, service UserService) http.Handler {
-	r := mr.PathPrefix("/login").Subrouter()
-
 	h := &loginHandler{
 		service: service,
 	}
+	mr.HandleFunc("/auth/", h.Login).Methods("GET")
 
-	r.HandleFunc("/", h.Login).Methods("GET")
-
-	return r
+	return mr
 }
 
 func (h *loginHandler) Login(w http.ResponseWriter, r *http.Request) {
+	logrus.Info("here")
 	ctx := r.Context()
 
 	username, password, ok := r.BasicAuth()
 	if !ok {
+		logrus.Warn("missing auth header")
 		makeError(w, http.StatusUnauthorized, "login", "missing auth header", "login")
 		return
 	}

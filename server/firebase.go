@@ -121,13 +121,12 @@ func NewUserFirestoreDatabase(app *firebase.App) *UserFirestoreDatabase {
 func (r *UserFirestoreDatabase) FindUserByUsername(ctx context.Context, username string) (*User, error) {
 	d, err := r.client.Collection(userCollection).Where("username", "==", username).Documents(ctx).Next()
 	if err != nil {
+		if err == iterator.Done {
+			logrus.Info("user does not exist")
+			return nil, nil
+		}
 		logrus.WithError(err).Error("failed to find user")
 		return nil, errors.New("unable of find user")
-	}
-
-	//TODO in future maybe return special error
-	if !d.Exists() {
-		return nil, nil
 	}
 
 	entity := &User{}

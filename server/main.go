@@ -36,7 +36,8 @@ func NewApp() *fx.App {
 		),
 		fx.Invoke(MakeDocumentHandler,
 			MakeBookHandler,
-			MakePaperHandler),
+			MakeLoginHandler,
+			MakePaperHandler,),
 		fx.Logger(NewLogger()),
 	)
 }
@@ -58,10 +59,18 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 
 	router.Use(cors)
 	handler := (cors)(router)
+
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logrus.Info("starting server")
-
+			//router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+			//	t, err := route.GetPathTemplate()
+			//	if err != nil {
+			//		return err
+			//	}
+			//	logrus.Info(t)
+			//	return nil
+			//})
 			go http.ListenAndServe(":8080", handler)
 			return nil
 		},
