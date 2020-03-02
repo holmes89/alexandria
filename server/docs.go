@@ -17,7 +17,6 @@ import (
 	"time"
 )
 
-
 var (
 	ErrInvalidFileType = errors.New("invalid file type")
 )
@@ -56,7 +55,6 @@ func NewPostgresDocumentRepository(database *PostgresDatabase) DocumentRepositor
 func NewFirestoreDocumentRepository(database *DocumentsFirestoreDatabase) DocumentRepository {
 	return database
 }
-
 
 type documentService struct {
 	storage DocumentStorage
@@ -126,19 +124,17 @@ func (s *documentService) CreateCover(id, path string) {
 		logrus.Panic("cover endpoint not set")
 	}
 
-
 	if !strings.Contains(url, "http") {
 		url = "https" + url
 	}
-	url = url+"/thumbnail/"
+	url = url + "/thumbnail/"
 	client := resty.New()
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-
 
 	logrus.Infof("calling %s", url)
 	resp, err := client.
 		R().
-		SetBody(coverRequest{ID:id, Path: path}).
+		SetBody(coverRequest{ID: id, Path: path}).
 		Post(url)
 
 	if err != nil {
@@ -150,7 +146,6 @@ func (s *documentService) CreateCover(id, path string) {
 		return
 	}
 
-
 	if resp.StatusCode() != http.StatusCreated {
 		logrus.WithField("code", resp.StatusCode()).Error("request failed")
 		return
@@ -159,12 +154,10 @@ func (s *documentService) CreateCover(id, path string) {
 	logrus.Info("cover created")
 }
 
-
 type coverRequest struct {
-	ID string `json:"id"`
+	ID   string `json:"id"`
 	Path string `json:"path"`
 }
-
 
 func (s *documentService) Delete(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
@@ -186,7 +179,7 @@ func (s *documentService) Scan(ctx context.Context) error {
 				name = name[1:]
 			}
 			doc := &Document{
-				ID: uuid.New().String(),
+				ID:          uuid.New().String(),
 				DisplayName: name,
 				Name:        name,
 				Path:        path,

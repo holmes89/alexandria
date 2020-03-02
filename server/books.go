@@ -7,7 +7,6 @@ import (
 	"mime/multipart"
 )
 
-
 type BookService interface {
 	GetAll(ctx context.Context) ([]*Document, error)
 	GetByID(ctx context.Context, id string) (*Document, error)
@@ -25,7 +24,7 @@ func NewBookService(service DocumentService) BookService {
 }
 
 func (s *bookService) GetAll(ctx context.Context) ([]*Document, error) {
-	m := map[string]interface{} { "type": "book"}
+	m := map[string]interface{}{"type": "book"}
 	entities, err := s.docService.GetAll(ctx, m)
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch books from repository")

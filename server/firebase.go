@@ -11,7 +11,7 @@ import (
 
 const (
 	documentCollection = "documents"
-	userCollection = "users"
+	userCollection     = "users"
 )
 
 func NewFirebaseApp() *firebase.App {
@@ -118,11 +118,16 @@ func NewUserFirestoreDatabase(app *firebase.App) *UserFirestoreDatabase {
 	}
 }
 
-func (r *UserFirestoreDatabase) FindUserByUsername(ctx context.Context, username string) (*User, error){
+func (r *UserFirestoreDatabase) FindUserByUsername(ctx context.Context, username string) (*User, error) {
 	d, err := r.client.Collection(userCollection).Where("username", "==", username).Documents(ctx).Next()
 	if err != nil {
 		logrus.WithError(err).Error("failed to find user")
 		return nil, errors.New("unable of find user")
+	}
+
+	//TODO in future maybe return special error
+	if !d.Exists() {
+		return nil, nil
 	}
 
 	entity := &User{}
@@ -131,4 +136,13 @@ func (r *UserFirestoreDatabase) FindUserByUsername(ctx context.Context, username
 		return nil, errors.New("unable to convert entity")
 	}
 	return entity, nil
+}
+
+func (r *UserFirestoreDatabase) CreateUser(ctx context.Context, user *User) error {
+	_, err := r.client.Collection(userCollection).Doc(user.ID).Set(ctx, user)
+	if err != nil {
+		logrus.WithError(err).Error("unable to insert user")
+		return errors.New("failed to insert user")
+	}
+	return nil
 }

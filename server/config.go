@@ -55,8 +55,8 @@ func (c *Config) LoadPostgresDatabaseConfig() PostgresDatabaseConfig {
 
 type BucketConfig struct {
 	ConnectionString string
-	AccessID string
-	AccessKey string
+	AccessID         string
+	AccessKey        string
 }
 
 func (c *Config) LoadBucketConfig() BucketConfig {
@@ -65,8 +65,8 @@ func (c *Config) LoadBucketConfig() BucketConfig {
 	key := os.Getenv("ACCESS_KEY")
 	return BucketConfig{
 		ConnectionString: host,
-		AccessID: accessID,
-		AccessKey: key,
+		AccessID:         accessID,
+		AccessKey:        key,
 	}
 }
 

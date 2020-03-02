@@ -17,30 +17,22 @@ func main() {
 func NewApp() *fx.App {
 
 	config := LoadConfig()
-	providers := []interface{}{
-		config.LoadBucketConfig,
-		NewGCPBucketStorage,
-		NewBucketDocumentStorage,
-		NewDocumentService,
-		NewBookService,
-		NewPaperService,
-		NewFirebaseApp,
-		NewMux,
-	}
 
-	//TODO db type enum
-	switch config.DatabaseType {
-	case "postgres":
-		providers = append(providers, config.LoadPostgresDatabaseConfig)
-		providers = append(providers, NewPostgresDatabase)
-		providers = append(providers, NewPostgresDocumentRepository)
-	case "firebase":
-		providers = append(providers, NewDocumentsFirestoreDatabase)
-		providers = append(providers, NewFirestoreDocumentRepository)
-	}
 	return fx.New(
 		fx.Provide(
-			providers...,
+			config.LoadBucketConfig,
+			NewGCPBucketStorage,
+			NewBucketDocumentStorage,
+			NewDocumentService,
+			NewBookService,
+			NewPaperService,
+			NewFirebaseApp,
+			NewDocumentsFirestoreDatabase,
+			NewFirestoreDocumentRepository,
+			NewUserFirestoreDatabase,
+			NewUserFirestoreRepository,
+			NewUserService,
+			NewMux,
 		),
 		fx.Invoke(MakeDocumentHandler,
 			MakeBookHandler,
@@ -81,7 +73,6 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 
 	return router
 }
-
 
 //NewLogger uses logrus for logging
 func NewLogger() *logrus.Logger {

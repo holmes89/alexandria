@@ -7,7 +7,6 @@ import (
 	"mime/multipart"
 )
 
-
 type PaperService interface {
 	GetAll(ctx context.Context) ([]*Document, error)
 	GetByID(ctx context.Context, id string) (*Document, error)
@@ -25,7 +24,7 @@ func NewPaperService(service DocumentService) PaperService {
 }
 
 func (s *paperService) GetAll(ctx context.Context) ([]*Document, error) {
-	m := map[string]interface{} { "type": "paper"}
+	m := map[string]interface{}{"type": "paper"}
 	entities, err := s.docService.GetAll(ctx, m)
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch papers from repository")
