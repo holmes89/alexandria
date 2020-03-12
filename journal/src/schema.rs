@@ -1,7 +1,7 @@
 table! {
     journal_entry (id) {
-        id -> Uuid,
+        id -> Nullable<Uuid>,
         content -> Text,
-        created -> Timestamp,
+        created -> Nullable<Timestamp>,
     }
 }

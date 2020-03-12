@@ -28,7 +28,11 @@ pub fn rocket() -> rocket::Rocket {
     rocket::ignite()
         .mount(
             "/api",
-            routes![handlers::find_all_entries, handlers::find_entry_by_id,],
+            routes![
+                handlers::find_all_entries,
+                handlers::find_entry_by_id,
+                handlers::create_entry
+            ],
         )
         .manage(db::init_pool())
         .register(catchers![not_found])

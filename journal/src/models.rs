@@ -1,12 +1,12 @@
 use crate::schema::journal_entry;
 use chrono::NaiveDateTime;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Queryable, Serialize, Insertable)]
+#[derive(Queryable, Serialize, Deserialize, Insertable)]
 #[table_name = "journal_entry"]
 pub struct JournalEntry {
-    id: Uuid,
+    id: Option<Uuid>,
     content: String,
-    created: NaiveDateTime,
+    created: Option<NaiveDateTime>,
 }
