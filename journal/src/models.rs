@@ -1,10 +1,12 @@
+use crate::schema::journal_entry;
+use chrono::NaiveDateTime;
 use serde::Serialize;
-use diesel::types::Uuid;
-use diesel::types::Timestamp;
+use uuid::Uuid;
 
 #[derive(Queryable, Serialize, Insertable)]
+#[table_name = "journal_entry"]
 pub struct JournalEntry {
     id: Uuid,
     content: String,
-    created: Timestamp
+    created: NaiveDateTime,
 }

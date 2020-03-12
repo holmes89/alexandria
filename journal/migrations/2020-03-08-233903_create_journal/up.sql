@@ -1,7 +1,8 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+DROP TABLE IF EXISTS journal_entry;
 
-CREATE TABLE journal_entry {
-  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+CREATE TABLE journal_entry (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   content TEXT NOT NULL,
-  created DEFAULT TIMESTAMP NOT NULL
-}
+  created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);

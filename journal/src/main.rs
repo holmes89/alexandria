@@ -1,3 +1,5 @@
+use journal;
+
 fn main() {
-    println!("Hello, world!");
+    journal::rocket().launch();
 }
