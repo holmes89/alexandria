@@ -1,12 +1,17 @@
 version: '3.1'
 
 services:
- db:
-  image: postgres
-  restart: always
-  environment:
-   POSTGRES_PASSWORD: ${DB_PASSWORD}
-  # volumes:
-  #   - ./postgres-data:/var/lib/postgresql/data
-  ports:
-    - 5432:5432
+  link-api:
+    image: holmes89/links-api
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    ports:
+      - "3000:3000"
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: mind
+    ports:
+      - 5432:5432
