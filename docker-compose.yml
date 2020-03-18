@@ -1,26 +1,12 @@
-version: "2.3"
+version: '3.1'
+
 services:
-  api:
-    image: us.gcr.io/holmes89-205014/alexandria-server:latest
-    restart: always
-    build:
-      context: .
-      target: prod
-      dockerfile: server/Dockerfile
-    environment:
-      - DB_TYPE=firebase
-  #    - DB_HOST=db
-      - BUCKET_HOST=$BUCKET_HOST
- #     - DB_PASSWORD=foo
-      - GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
-      - ISS=https://joelholmes.auth0.com/
-    ports:
-      - 8080:8080
-#    depends_on:
-#      - "db"
-    volumes:
-      - ${PWD}/creds.json:/creds.json
-#  db:
-#    image: postgres
-#    environment:
-#      - POSTGRES_PASSWORD=foo
+ db:
+  image: postgres
+  restart: always
+  environment:
+   POSTGRES_PASSWORD: ${DB_PASSWORD}
+  # volumes:
+  #   - ./postgres-data:/var/lib/postgresql/data
+  ports:
+    - 5432:5432
