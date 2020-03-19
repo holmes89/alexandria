@@ -5,6 +5,9 @@ WORKDIR /journal
 COPY ./journal/src ./src
 COPY ./journal/Cargo.* ./
 
+ENV PORT 8000
+EXPOSE 8000
+
 RUN cargo build --release
 
 FROM scratch as prod
