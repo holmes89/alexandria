@@ -3,7 +3,7 @@ COPY ./links /links
 WORKDIR "/links"
 RUN lein uberjar
 
-FROM openjdk:alpine
+FROM openjdk:8-alpine
 
 COPY --from=build /links/target/uberjar/*-standalone.jar links-api.jar
 CMD ["java", "-jar", "links-api.jar"]
