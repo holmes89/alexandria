@@ -9,5 +9,7 @@ RUN cargo build --release
 
 FROM scratch as prod
 
+ENV PORT 8000
+EXPOSE 8000
 COPY --from=build /journal/target/release/journal /
 CMD ["/journal"]
