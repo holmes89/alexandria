@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq" // Used for specifying the type client we are creating
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -25,25 +28,24 @@ func NewPostgresDatabase(config PostgresDatabaseConfig) *PostgresDatabase {
 	}
 	logrus.Info("connected to postgres")
 	psqldb := &PostgresDatabase{db}
-	psqldb.initializeRepository()
+	psqldb.migrate()
 
 	return psqldb
 }
 
-func (r *PostgresDatabase) initializeRepository() {
-	query := `CREATE TABLE IF NOT EXISTS documents(
-  				id VARCHAR(36) NOT NULL,
-				description VARCHAR(1024),
-  				displayName VARCHAR(255) NOT NULL,
-  				name VARCHAR(255) NOT NULL,
-  				type VARCHAR(255) NOT NULL,
-				path VARCHAR(255) NOT NULL,
-  				created timestamp NOT NULL DEFAULT current_timestamp,
-  				updated timestamp NULL DEFAULT NULL,
-  				PRIMARY KEY(id)
-			);`
-	if _, err := r.conn.Exec(query); err != nil {
-		logrus.WithError(err).Fatal("unable to initialize database")
+func (r *PostgresDatabase) migrate() {
+	driver, err := postgres.WithInstance(r.conn, &postgres.Config{})
+	if err != nil {
+		logrus.WithError(err).Fatal("unable to get driver to migrate")
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://migrations",
+		"mind", driver)
+	if err != nil {
+		logrus.WithError(err).Fatal("unable to create migration instance")
+	}
+	if err := m.Up(); err != nil {
+		logrus.WithError(err).Fatal("unable to migrate")
 	}
 }
 
@@ -68,7 +70,7 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch results")
-		return nil, errors.Wrap(err, "unable to fetch results")
+		return nil, errors.New( "unable to fetch results")
 	}
 	for rows.Next() {
 		doc := &Document{}
@@ -111,7 +113,7 @@ func (r *PostgresDatabase) Insert(ctx context.Context, doc *Document) error {
 		RunWith(r.conn).
 		Exec(); err != nil {
 		logrus.WithError(err).Warn("unable to insert doc")
-		return errors.Wrap(err, "unable to insert doc metadata")
+		return errors.New("unable to insert doc metadata")
 	}
 	return nil
 }
@@ -125,7 +127,7 @@ func (r *PostgresDatabase) UpsertStream(ctx context.Context, input <-chan *Docum
 		}
 		if err := r.Insert(bctx, doc); err != nil {
 			logrus.WithError(err).Info("unable to upsert document")
-			return errors.Wrap(err, "unable to upsert document")
+			return errors.New("unable to upsert document")
 		}
 		count++
 	}
@@ -137,8 +139,40 @@ func (r *PostgresDatabase) Delete(ctx context.Context, id string) error {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	if _, err := ps.Delete("documents").Where(sq.Eq{"id": id}).RunWith(r.conn).Exec(); err != nil {
 		logrus.WithError(err).Warn("unable to scan doc results")
-		return errors.Wrap(err, "unable to delete")
+		return errors.New("unable to delete")
 	}
 
+	return nil
+}
+
+func (r *PostgresDatabase) FindUserByUsername(ctx context.Context, username string) (*User, error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	var entity User
+	if err := ps.Select("id", "username", "password").
+		From("users").
+		Where(sq.Eq{"username": username}).
+		RunWith(r.conn).
+		QueryRow().
+		Scan(&entity.ID, &entity.Username, &entity.Password); err != nil {
+			logrus.WithError(err).Error("could not find user")
+			return nil, errors.New("could not find user")
+	}
+	return &entity, nil
+}
+
+func (r *PostgresDatabase) CreateUser(ctx context.Context, user *User) error {
+	if user.ID == "" {
+		user.ID = uuid.New().String()
+	}
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	if _, err := ps.Insert("users").
+		Columns("username", "password").
+		Values(user.Username, user.Password).
+		RunWith(r.conn).Exec(); err != nil {
+
+		logrus.WithError(err).Error("unable to create user")
+		errors.New("unable to create user")
+	}
 	return nil
 }

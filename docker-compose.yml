@@ -1,11 +1,32 @@
-version: '3.1'
+version: '3.7'
 
 services:
+ docs-api:
+   image: holmes89/docs-api
+   build:
+     context: .
+     dockerfile: server/Dockerfile
+     target: prod
+   environment:
+     DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind"
+   ports:
+     - 8080:8080
+ journal-api:
+   image: holmes89/journal-api
+   build:
+     context: .
+     dockerfile: journal/Dockerfile
+     target: prod
+   environment:
+     DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind"
+   ports:
+     - 8000:8000
  db:
   image: postgres
   restart: always
   environment:
    POSTGRES_PASSWORD: ${DB_PASSWORD}
+   POSTGRES_DB: mind
   # volumes:
   #   - ./postgres-data:/var/lib/postgresql/data
   ports:

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
-	"strconv"
 )
 
 type Config struct {
@@ -30,26 +28,26 @@ type PostgresDatabaseConfig struct {
 
 func (c *Config) LoadPostgresDatabaseConfig() PostgresDatabaseConfig {
 
-	host := getEnv("DB_HOST", "localhost")
-	portString := getEnv("DB_PORT", "5432")
-	port, err := strconv.Atoi(portString)
-	if err != nil {
-		logrus.WithError(err).Warn("invalid port falling back to default 5432")
-		port = 5432
-	}
-	username := getEnv("DB_POSTGRES", "postgres")
-	password := getEnv("DB_PASSWORD", "password")
-	dbname := getEnv("DB_NAME", "postgres")
-	sslmode := getEnv("DB_SSL", "disable")
-
-	connStringFormat := "host=%s port=%d user=%s " +
-		"password=%s dbname=%s sslmode=%s connect_timeout=15"
-
-	connString := fmt.Sprintf(connStringFormat,
-		host, port, username, password, dbname, sslmode)
+	//host := getEnv("DB_HOST", "localhost")
+	//portString := getEnv("DB_PORT", "5432")
+	//port, err := strconv.Atoi(portString)
+	//if err != nil {
+	//	logrus.WithError(err).Warn("invalid port falling back to default 5432")
+	//	port = 5432
+	//}
+	//username := getEnv("DB_POSTGRES", "postgres")
+	//password := getEnv("DB_PASSWORD", "password")
+	//dbname := getEnv("DB_NAME", "postgres")
+	//sslmode := getEnv("DB_SSL", "disable")
+	//
+	//connStringFormat := "host=%s port=%d user=%s " +
+	//	"password=%s dbname=%s sslmode=%s connect_timeout=15"
+	//
+	//connString := fmt.Sprintf(connStringFormat,
+	//	host, port, username, password, dbname, sslmode)
 
 	return PostgresDatabaseConfig{
-		ConnectionString: connString,
+		ConnectionString: getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost"),
 	}
 }
 

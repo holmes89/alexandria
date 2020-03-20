@@ -21,23 +21,23 @@ func NewApp() *fx.App {
 	return fx.New(
 		fx.Provide(
 			config.LoadBucketConfig,
+			config.LoadPostgresDatabaseConfig,
 			NewGCPBucketStorage,
 			NewBucketDocumentStorage,
 			NewDocumentService,
 			NewBookService,
 			NewPaperService,
-			NewFirebaseApp,
 			NewDocumentsFirestoreDatabase,
-			NewFirestoreDocumentRepository,
-			NewUserFirestoreDatabase,
-			NewUserFirestoreRepository,
+			NewPostgresDatabase,
+			NewPostgresDocumentRepository,
+			NewUserPostgresRepository,
 			NewUserService,
 			NewMux,
 		),
 		fx.Invoke(MakeDocumentHandler,
 			MakeBookHandler,
 			MakeLoginHandler,
-			MakePaperHandler,),
+			MakePaperHandler),
 		fx.Logger(NewLogger()),
 	)
 }
