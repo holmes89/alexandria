@@ -1,4 +1,4 @@
-name: API
+name: Docs API
 
 on:
   push:
@@ -15,15 +15,15 @@ jobs:
      - name: Check out code into the Go module directory
        uses: actions/checkout@v1
        with:
-          path: "server" 
-          
+          path: "server"
+
      - name: Authenticate into Google Cloud Platform
        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
        with:
          version: '270.0.0'
          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
-         service_account_key: ${{ secrets.GCLOUD_AUTH }} 
-  
+         service_account_key: ${{ secrets.GCLOUD_AUTH }}
+
      - name: Build the Docker image
        run: docker build . --file server/Dockerfile --tag us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --target prod
 
@@ -32,6 +32,6 @@ jobs:
 
      - name: Push image to Google Cloud Container Registry
        run: "docker push us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD)"
-        
+
      - name: Install beta commands and deploy on cloud run
-       run: "gcloud components install beta --quiet && gcloud beta run deploy alexandria-api --quiet --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east1 --platform managed --update-env-vars ISS=${{ secrets.ISS}},COVER_ENDPOINT=\"${{ secrets.COVER_ENDPOINT }}\",BUCKET_HOST=${{ secrets.BUCKET_HOST}},ACCESS_ID=${{ secrets.ACCESS_ID }},ACCESS_KEY=\"${{ secrets.ACCESS_KEY }}\",DEFAULT_USER=${{ secrets.DEFAULT_USER }},DEFAULT_PASSWORD=${{ secrets.DEFAULT_PASSWORD }},JWT_SECRET=${{ secrets.JWT_SECRET }}"
+       run: "gcloud components install beta --quiet && gcloud beta run deploy alexandria-api --quiet --image us.gcr.io/${{ secrets.GCLOUD_PROJECT }}/alexandria-server:$(git rev-parse --short HEAD) --project ${{ secrets.GCLOUD_PROJECT }} --region us-east1 --platform managed --update-env-vars ISS=${{ secrets.ISS}},COVER_ENDPOINT=\"${{ secrets.COVER_ENDPOINT }}\",BUCKET_HOST=${{ secrets.BUCKET_HOST}},ACCESS_ID=${{ secrets.ACCESS_ID }},ACCESS_KEY=\"${{ secrets.ACCESS_KEY }}\",DEFAULT_USER=${{ secrets.DEFAULT_USER }},DEFAULT_PASSWORD=${{ secrets.DEFAULT_PASSWORD }},JWT_SECRET=${{ secrets.JWT_SECRET }},DATABASE_URL=\"${{ secrets.DATABASE_URL }}\""

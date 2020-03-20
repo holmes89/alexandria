@@ -8,6 +8,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq" // Used for specifying the type client we are creating
 	"github.com/sirupsen/logrus"
@@ -28,13 +29,17 @@ func NewPostgresDatabase(config PostgresDatabaseConfig) *PostgresDatabase {
 	}
 	logrus.Info("connected to postgres")
 	psqldb := &PostgresDatabase{db}
-	psqldb.migrate()
+	migrateDB(config)
 
 	return psqldb
 }
 
-func (r *PostgresDatabase) migrate() {
-	driver, err := postgres.WithInstance(r.conn, &postgres.Config{})
+func migrateDB(config PostgresDatabaseConfig) {
+	db, err := sql.Open("postgres", config.ConnectionString)
+	if err != nil {
+		logrus.WithError(err).Fatal("unable to connect to postgres to migrate")
+	}
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to get driver to migrate")
 	}
@@ -45,7 +50,10 @@ func (r *PostgresDatabase) migrate() {
 		logrus.WithError(err).Fatal("unable to create migration instance")
 	}
 	if err := m.Up(); err != nil {
-		logrus.WithError(err).Fatal("unable to migrate")
+		if err != migrate.ErrNoChange {
+			logrus.WithError(err).Fatal("unable to migrate")
+		}
+		logrus.Info("no migrations to run")
 	}
 }
 
@@ -155,6 +163,9 @@ func (r *PostgresDatabase) FindUserByUsername(ctx context.Context, username stri
 		RunWith(r.conn).
 		QueryRow().
 		Scan(&entity.ID, &entity.Username, &entity.Password); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, nil
+			}
 			logrus.WithError(err).Error("could not find user")
 			return nil, errors.New("could not find user")
 	}
@@ -167,12 +178,12 @@ func (r *PostgresDatabase) CreateUser(ctx context.Context, user *User) error {
 	}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	if _, err := ps.Insert("users").
-		Columns("username", "password").
-		Values(user.Username, user.Password).
+		Columns("id", "username", "password").
+		Values(user.ID, user.Username, user.Password).
 		RunWith(r.conn).Exec(); err != nil {
 
 		logrus.WithError(err).Error("unable to create user")
-		errors.New("unable to create user")
+		return errors.New("unable to create user")
 	}
 	return nil
 }
