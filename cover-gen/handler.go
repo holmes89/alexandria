@@ -50,7 +50,7 @@ func (h *thumbnailHandler) BulkPost(w http.ResponseWriter, r *http.Request) {
 	var entities []request
 
 	if err := dec.Decode(&entities); err != nil {
-		logrus.WithError(err).Error("unable to decode message")
+		logrus.WithError(err).Error("unable to decode message bulk")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -58,7 +58,7 @@ func (h *thumbnailHandler) BulkPost(w http.ResponseWriter, r *http.Request) {
 	results := make(map[string]string)
 	for _, e := range entities{
 		if err := h.service.CreateCover(e.ID, e.Path); err != nil {
-			logrus.WithError(err).Error("unable to create thumbnail")
+			logrus.WithError(err).Error("unable to create bulk thumbnail")
 			results[e.ID] = "failed"
 			continue
 		}
