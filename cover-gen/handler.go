@@ -14,7 +14,7 @@ func MakeThumnbnailHandler(mr *mux.Router, service *Service) http.Handler {
 		service: service,
 	}
 	r.HandleFunc("/", h.Post).Methods("POST")
-	r.HandleFunc("/bulk", h.Post).Methods("POST")
+	r.HandleFunc("/bulk", h.BulkPost).Methods("POST")
 
 	return r
 }
