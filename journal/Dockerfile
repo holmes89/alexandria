@@ -2,6 +2,7 @@ FROM rust:latest as build
 RUN rustup default nightly
 
 WORKDIR /journal
+COPY ./journal/migrations ./migrations
 COPY ./journal/src ./src
 COPY ./journal/Cargo.* ./
 
