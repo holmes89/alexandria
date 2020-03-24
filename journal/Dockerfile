@@ -2,12 +2,20 @@ FROM rust:latest as build
 RUN rustup default nightly
 
 WORKDIR /journal
+COPY ./journal/migrations ./migrations
 COPY ./journal/src ./src
 COPY ./journal/Cargo.* ./
 
-RUN cargo build --release
+ENV PORT 8000
+EXPOSE 8000
 
-FROM scratch as prod
+RUN cargo build --release --bin journal
+CMD ["./target/release/journal"]
 
-COPY --from=build /journal/target/release/journal /
-CMD ["/journal"]
+FROM debian:stretch-slim as prod
+RUN apt update && apt install libpq-dev -y
+ENV PORT 8000
+EXPOSE 8000
+
+COPY --from=build /journal/target/release /release
+CMD ["/release/journal"]

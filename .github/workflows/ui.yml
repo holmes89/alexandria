@@ -1,4 +1,4 @@
-name: Clojure CI
+name: UI
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     - name: Yarn dependencies
       run: yarn install
       working-directory: "./ui"
-    - name: Build Prod 
+    - name: Build Prod
       run: lein with-profile prod run -m shadow.cljs.devtools.cli release app --config-merge '{:closure-defines {alexandria.config/baseurl "https://alexandria-api-4josd7vm2q-ue.a.run.app"}}'
       working-directory: "./ui"
     - name: Authenticate into Google Cloud Platform
@@ -27,6 +27,6 @@ jobs:
       with:
          version: '270.0.0'
          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
-         service_account_key: ${{ secrets.GCLOUD_AUTH }} 
+         service_account_key: ${{ secrets.GCLOUD_AUTH }}
     - name: Sync with GCP
       run: "gsutil -m rsync -R ./ui/resources/public gs://read.jholmestech.com"

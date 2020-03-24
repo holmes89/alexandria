@@ -44,6 +44,10 @@ func NewUserFirestoreRepository(database *UserFirestoreDatabase) UserRepository 
 	return database
 }
 
+func NewUserPostgresRepository(database *PostgresDatabase) UserRepository {
+	return database
+}
+
 type userService struct {
 	repo UserRepository
 }

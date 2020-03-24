@@ -10,8 +10,9 @@
 (s/defschema LinkSchema
   {:id s/Uuid
    :link s/Str
-   :display_nam s/Str
+   :display_name s/Str
    :description s/Str
+   :created s/Str
    })
 
 (defn response [link]

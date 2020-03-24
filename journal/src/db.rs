@@ -5,15 +5,23 @@ use ::diesel;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
+use diesel_migrations::embed_migrations;
+
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
 use std::env;
 use std::ops::Deref;
 
+embed_migrations!("./migrations");
+
 pub fn init_pool() -> Pool {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let conn_str = database_url.clone();
     let manager = ConnectionManager::<PgConnection>::new(database_url);
+    let conn = PgConnection::establish(conn_str.as_str()).expect("error connecting to db");
+    embedded_migrations::run(&conn).expect("can't migrate");
+
     r2d2::Pool::builder()
         .build(manager)
         .expect("failed to create pool")

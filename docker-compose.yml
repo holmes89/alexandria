@@ -1,12 +1,48 @@
-version: '3.1'
+version: '3.7'
 
 services:
-  link-api:
-    image: holmes89/links-api
+  docs-api:
+    restart: always
+    image: holmes89/docs-api
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: prod
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind?sslmode=disable"
+      ACCESS_ID: "${ACCESS_ID}"
+      ACCESS_KEY: "${ACCESS_KEY}"
+      BUCKET_HOST: "${BUCKET_HOST}"
+      GOOGLE_APPLICATION_CREDENTIALS: "/creds.json"
+      JWT_SECRET: "test"
+      DEFAULT_USER: "holmes89"
+      DEFAULT_PASSWORD: "password"
     ports:
-      - "3000:3000"
+      - 8081:8080
+    volumes:
+      - ${PWD}/creds.json:/creds.json
+  journal-api:
+   restart: always
+   image: holmes89/journal-api
+   build:
+     context: .
+     dockerfile: journal/Dockerfile
+     target: prod
+   environment:
+     DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind?sslmode=disable"
+   ports:
+     - 8000:8000
+  link-api:
+    restart: always
+    image: holmes89/links-api
+    build:
+     context: .
+     dockerfile: links/Dockerfile
+     target: prod
+    environment:
+      DATABASE_URL: "jdbc:postgresql://db/mind?user=postgres&password=${DB_PASSWORD}&sslmode=disable"
+    ports:
+      - 3000:3000
   db:
     image: postgres
     restart: always

@@ -10,7 +10,8 @@
                  [ring/ring-jetty-adapter "1.8.0"]
                  [org.postgresql/postgresql "42.2.11"]
                  [environ "1.1.0"]
-                 [buddy "2.0.0"]]
+                 [buddy "2.0.0"]
+                 [migratus "1.2.8"]]
   :main ^:skip-aot links.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
