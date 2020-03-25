@@ -8,11 +8,11 @@
             [clojure.tools.logging :as log]))
 
 (s/defschema LinkSchema
-  {:id s/Uuid
+  {(s/optional-key :id) s/Uuid
    :link s/Str
    :display_name s/Str
-   :description s/Str
-   :created s/Str
+   (s/optional-key :description) s/Str
+   (s/optional-key :created) s/Str
    })
 
 (defn response [link]
@@ -32,13 +32,19 @@
   (-> (Link id)
       (response)))
 
+(defn find-all-handler []
+  (-> (db/select Link)
+      (response)))
+
 (defroutes link-routes
   (context "/links" []
            :middleware [mw/cors]
            (POST "/" request
              :responses {created LinkSchema}
              :body [create-link-req LinkSchema]
-             (create-link-handler create-link-req request))
+             (create-link-handler create-link-req))
+           (GET "/" []
+             (find-all-handler))
            (GET "/:id" []
              :path-params [id :- s/Uuid]
              (get-link-handler id))
