@@ -17,33 +17,26 @@ func main() {
 func NewApp() *fx.App {
 
 	config := LoadConfig()
-	providers := []interface{}{
-		config.LoadBucketConfig,
-		NewGCPBucketStorage,
-		NewBucketDocumentStorage,
-		NewDocumentService,
-		NewBookService,
-		NewPaperService,
-		NewFirebaseApp,
-		NewMux,
-	}
 
-	//TODO db type enum
-	switch config.DatabaseType {
-	case "postgres":
-		providers = append(providers, config.LoadPostgresDatabaseConfig)
-		providers = append(providers, NewPostgresDatabase)
-		providers = append(providers, NewPostgresDocumentRepository)
-	case "firebase":
-		providers = append(providers, NewFirestoreDatabase)
-		providers = append(providers, NewFirestoreDocumentRepository)
-	}
 	return fx.New(
 		fx.Provide(
-			providers...,
+			config.LoadBucketConfig,
+			config.LoadPostgresDatabaseConfig,
+			NewGCPBucketStorage,
+			NewBucketDocumentStorage,
+			NewDocumentService,
+			NewBookService,
+			NewPaperService,
+			NewDocumentsFirestoreDatabase,
+			NewPostgresDatabase,
+			NewPostgresDocumentRepository,
+			NewUserPostgresRepository,
+			NewUserService,
+			NewMux,
 		),
 		fx.Invoke(MakeDocumentHandler,
 			MakeBookHandler,
+			MakeLoginHandler,
 			MakePaperHandler),
 		fx.Logger(NewLogger()),
 	)
@@ -66,10 +59,18 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 
 	router.Use(cors)
 	handler := (cors)(router)
+
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logrus.Info("starting server")
-
+			//router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+			//	t, err := route.GetPathTemplate()
+			//	if err != nil {
+			//		return err
+			//	}
+			//	logrus.Info(t)
+			//	return nil
+			//})
 			go http.ListenAndServe(":8080", handler)
 			return nil
 		},
@@ -81,7 +82,6 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 
 	return router
 }
-
 
 //NewLogger uses logrus for logging
 func NewLogger() *logrus.Logger {

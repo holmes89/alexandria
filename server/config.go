@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
-	"strconv"
 )
 
 type Config struct {
@@ -14,10 +12,10 @@ type Config struct {
 }
 
 func LoadConfig() Config {
-	dbType := getEnv("DB_TYPE", "firebase")
+	dbType := getEnv("DB_TYPE", "postgres")
 
 	config := &Config{
-		DatabaseType: getEnv("DB_TYPE", "firebase"),
+		DatabaseType: getEnv("DB_TYPE", "postgres"),
 	}
 
 	logrus.WithField("type", dbType).Info("loading database config")
@@ -30,33 +28,33 @@ type PostgresDatabaseConfig struct {
 
 func (c *Config) LoadPostgresDatabaseConfig() PostgresDatabaseConfig {
 
-	host := getEnv("DB_HOST", "localhost")
-	portString := getEnv("DB_PORT", "5432")
-	port, err := strconv.Atoi(portString)
-	if err != nil {
-		logrus.WithError(err).Warn("invalid port falling back to default 5432")
-		port = 5432
-	}
-	username := getEnv("DB_POSTGRES", "postgres")
-	password := getEnv("DB_PASSWORD", "password")
-	dbname := getEnv("DB_NAME", "postgres")
-	sslmode := getEnv("DB_SSL", "disable")
-
-	connStringFormat := "host=%s port=%d user=%s " +
-		"password=%s dbname=%s sslmode=%s connect_timeout=15"
-
-	connString := fmt.Sprintf(connStringFormat,
-		host, port, username, password, dbname, sslmode)
+	//host := getEnv("DB_HOST", "localhost")
+	//portString := getEnv("DB_PORT", "5432")
+	//port, err := strconv.Atoi(portString)
+	//if err != nil {
+	//	logrus.WithError(err).Warn("invalid port falling back to default 5432")
+	//	port = 5432
+	//}
+	//username := getEnv("DB_POSTGRES", "postgres")
+	//password := getEnv("DB_PASSWORD", "password")
+	//dbname := getEnv("DB_NAME", "postgres")
+	//sslmode := getEnv("DB_SSL", "disable")
+	//
+	//connStringFormat := "host=%s port=%d user=%s " +
+	//	"password=%s dbname=%s sslmode=%s connect_timeout=15"
+	//
+	//connString := fmt.Sprintf(connStringFormat,
+	//	host, port, username, password, dbname, sslmode)
 
 	return PostgresDatabaseConfig{
-		ConnectionString: connString,
+		ConnectionString: getEnv("DATABASE_URL", "postgresql://postgres:postgres@localhost"),
 	}
 }
 
 type BucketConfig struct {
 	ConnectionString string
-	AccessID string
-	AccessKey string
+	AccessID         string
+	AccessKey        string
 }
 
 func (c *Config) LoadBucketConfig() BucketConfig {
@@ -65,8 +63,8 @@ func (c *Config) LoadBucketConfig() BucketConfig {
 	key := os.Getenv("ACCESS_KEY")
 	return BucketConfig{
 		ConnectionString: host,
-		AccessID: accessID,
-		AccessKey: key,
+		AccessID:         accessID,
+		AccessKey:        key,
 	}
 }
 

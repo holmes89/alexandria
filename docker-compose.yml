@@ -1,26 +1,53 @@
-version: "2.3"
+version: '3.7'
+
 services:
-  api:
-    image: us.gcr.io/holmes89-205014/alexandria-server:latest
+  docs-api:
     restart: always
+    image: holmes89/docs-api
     build:
       context: .
-      target: prod
       dockerfile: server/Dockerfile
+      target: prod
     environment:
-      - DB_TYPE=firebase
-  #    - DB_HOST=db
-      - BUCKET_HOST=$BUCKET_HOST
- #     - DB_PASSWORD=foo
-      - GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS
-      - ISS=https://joelholmes.auth0.com/
+      DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind?sslmode=disable"
+      ACCESS_ID: "${ACCESS_ID}"
+      ACCESS_KEY: "${ACCESS_KEY}"
+      BUCKET_HOST: "${BUCKET_HOST}"
+      GOOGLE_APPLICATION_CREDENTIALS: "/creds.json"
+      JWT_SECRET: "test"
+      DEFAULT_USER: "holmes89"
+      DEFAULT_PASSWORD: "password"
     ports:
-      - 8080:8080
-#    depends_on:
-#      - "db"
+      - 8081:8080
     volumes:
       - ${PWD}/creds.json:/creds.json
-#  db:
-#    image: postgres
-#    environment:
-#      - POSTGRES_PASSWORD=foo
+  journal-api:
+   restart: always
+   image: holmes89/journal-api
+   build:
+     context: .
+     dockerfile: journal/Dockerfile
+     target: prod
+   environment:
+     DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind?sslmode=disable"
+   ports:
+     - 8000:8000
+  links-api:
+    restart: always
+    image: holmes89/links-api
+    build:
+     context: .
+     dockerfile: links/Dockerfile
+     target: prod
+    environment:
+      DATABASE_URL: "jdbc:postgresql://db/mind?user=postgres&password=${DB_PASSWORD}&sslmode=disable"
+    ports:
+      - 3000:3000
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: mind
+    ports:
+      - 5432:5432

@@ -69,7 +69,7 @@ func NewGCPBucketStorage(config BucketConfig) *BucketStorage {
 
 	opts := &gcsblob.Options{
 		GoogleAccessID: accessID,
-		PrivateKey: []byte(accessKey),
+		PrivateKey:     []byte(accessKey),
 	}
 	// Create an HTTP client.
 	// This example uses the default HTTP transport and the credentials
@@ -113,7 +113,6 @@ func (s *BucketStorage) Save(ctx context.Context, fileName string, reader io.Rea
 	return fileName, err //TODO allow for custom directory?
 }
 
-
 func (s *BucketStorage) Get(ctx context.Context, path string) (string, error) {
 	opts := &blob.SignedURLOptions{
 		Expiry: 15 * time.Hour,
@@ -129,7 +128,7 @@ func (s *BucketStorage) List(ctx context.Context) <-chan string {
 	go func() {
 		defer close(out)
 		bgctx := context.Background()
-		for{
+		for {
 			for {
 				obj, err := iter.Next(bgctx)
 				if err == io.EOF {

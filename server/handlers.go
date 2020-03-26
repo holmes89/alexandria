@@ -28,7 +28,6 @@ type documentHandler struct {
 	service DocumentService
 }
 
-
 func MakeBookHandler(mr *mux.Router, service BookService) http.Handler {
 	r := mr.PathPrefix("/books").Subrouter()
 
@@ -100,9 +99,8 @@ func (h *documentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encodeResponse(r.Context(), w, map[string]string{"status":"success"})
+	encodeResponse(r.Context(), w, map[string]string{"status": "success"})
 }
-
 
 func (h *documentHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -127,9 +125,8 @@ func (h *documentHandler) Scan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encodeResponse(r.Context(), w, map[string]string{"status":"success"})
+	encodeResponse(r.Context(), w, map[string]string{"status": "success"})
 }
-
 
 func (h *bookHandler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -225,6 +222,40 @@ func (h *paperHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	encodeResponse(r.Context(), w, entity)
+}
+
+type loginHandler struct {
+	service UserService
+}
+
+func MakeLoginHandler(mr *mux.Router, service UserService) http.Handler {
+	h := &loginHandler{
+		service: service,
+	}
+	mr.HandleFunc("/auth/", h.Login).Methods("GET")
+
+	return mr
+}
+
+func (h *loginHandler) Login(w http.ResponseWriter, r *http.Request) {
+	logrus.Info("here")
+	ctx := r.Context()
+
+	username, password, ok := r.BasicAuth()
+	if !ok {
+		logrus.Warn("missing auth header")
+		makeError(w, http.StatusUnauthorized, "login", "missing auth header", "login")
+		return
+	}
+
+	token, err := h.service.Authenticate(ctx, username, password)
+	if err != nil {
+		logrus.WithError(err).Error("failed to login")
+		makeError(w, http.StatusUnauthorized, "login", "invalid login", "login")
+		return
+	}
+
+	encodeResponse(r.Context(), w, token)
 }
 
 func makeError(w http.ResponseWriter, code int, domain string, message string, method string) {
