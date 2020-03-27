@@ -58,14 +58,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div []
-        [ nav [ class "navbar", class "is-light" ]
-            [ div [ class "navbar-brand" ]
-                [ div [ class "navbar-item" ]
-                    [ span [] [ text "Alexandria", img [ src "/alexandria.png" ] [] ]
-                    ]
-                ]
-            ]
-        , div []
+        [ div []
             [ section [ class "section" ]
                 [ div [ class "container" ]
                     [ viewBooks model

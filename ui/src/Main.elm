@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
 import Html exposing (..)
+import Html.Attributes exposing (class, href, src, style)
 import Page.ListBooks as ListBooks
 import Route exposing (Route)
 import Url exposing (Url)
@@ -72,9 +73,22 @@ initCurrentPage ( model, existingCmds ) =
 
 view : Model -> Document Msg
 view model =
-    { title = "Post App"
-    , body = [ currentView model ]
+    { title = "Alexandria"
+    , body = [ viewHeader model, currentView model ]
     }
+
+
+viewHeader : Model -> Html Msg
+viewHeader model =
+    div []
+        [ nav [ class "navbar", class "is-light" ]
+            [ div [ class "navbar-brand" ]
+                [ div [ class "navbar-item" ]
+                    [ span [] [ text "Alexandria", img [ src "/alexandria.png" ] [] ]
+                    ]
+                ]
+            ]
+        ]
 
 
 currentView : Model -> Html Msg
