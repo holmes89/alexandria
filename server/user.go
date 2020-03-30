@@ -119,7 +119,6 @@ func (s *userService) Authenticate(ctx context.Context, username, password strin
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		logrus.WithField("username", username).WithError(err).Error("invalid login")
-		logrus.WithField("input", password).Error("invalid password")
 		return nil, ErrInvalidLogin
 	}
 
