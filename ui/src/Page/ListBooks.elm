@@ -83,6 +83,10 @@ viewBooks model =
             div [ class "columns", class "is-mobile", class "is-multiline" ]
                 (List.map
                     (\l ->
+                        let
+                            viewPath =
+                                "/books/" ++ l.id
+                        in
                         div [ class "column", class "is-one-quarter" ]
                             [ div [ class "card" ]
                                 [ header [ class "card-header" ]
@@ -92,7 +96,7 @@ viewBooks model =
                                     [ img [ src ("http://read.jholmestech.com/assets/covers/" ++ l.id ++ ".jpg"), style "max-width" "300px" ] []
                                     ]
                                 , footer [ class "card-footer" ]
-                                    [ a [ class "card-footer-item", href "#" ] [ i [ class "fas", class "fa-book-open" ] [], text "Read" ]
+                                    [ a [ class "card-footer-item", href viewPath ] [ i [ class "fas", class "fa-book-open" ] [], text "View" ]
                                     ]
                                 ]
                             ]

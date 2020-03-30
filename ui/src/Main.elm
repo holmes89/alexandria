@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
 import Page.ListBooks as ListBooks
+import Page.ViewBook as ViewBook
 import Route exposing (Route)
 import Url exposing (Url)
 
@@ -31,10 +32,12 @@ type alias Model =
 type Page
     = NotFoundPage
     | ListBooksPage ListBooks.Model
+    | ViewBookPage ViewBook.Model
 
 
 type Msg
     = ListBooksPageMsg ListBooks.Msg
+    | ViewBookPageMsg ViewBook.Msg
     | LinkClicked UrlRequest
     | UrlChanged Url
 
@@ -65,6 +68,13 @@ initCurrentPage ( model, existingCmds ) =
                             ListBooks.init
                     in
                     ( ListBooksPage pageModel, Cmd.map ListBooksPageMsg pageCmds )
+
+                Route.Book bookID ->
+                    let
+                        ( pageModel, pageCmds ) =
+                            ViewBook.init bookID model.navKey
+                    in
+                    ( ViewBookPage pageModel, Cmd.map ViewBookPageMsg pageCmds )
     in
     ( { model | page = currentPage }
     , Cmd.batch [ existingCmds, mappedPageCmds ]
@@ -101,6 +111,10 @@ currentView model =
             ListBooks.view pageModel
                 |> Html.map ListBooksPageMsg
 
+        ViewBookPage pageModel ->
+            ViewBook.view pageModel
+                |> Html.map ViewBookPageMsg
+
 
 notFoundView : Html msg
 notFoundView =
@@ -118,6 +132,18 @@ update msg model =
             ( { model | page = ListBooksPage updatedPageModel }
             , Cmd.map ListBooksPageMsg updatedCmd
             )
+
+        ( LinkClicked urlRequest, _ ) ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model
+                    , Nav.pushUrl model.navKey (Url.toString url)
+                    )
+
+                Browser.External url ->
+                    ( model
+                    , Nav.load url
+                    )
 
         ( UrlChanged url, _ ) ->
             let
