@@ -47,15 +47,56 @@ update msg model =
                     ( { model | status = Failure }, Cmd.none )
 
 
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
 view : Model -> Html Msg
 view model =
-    div []
-        [ div []
-            [ section [ class "section" ]
-                [ div [ class "container" ] [ text "here" ]
+    case model.status of
+        Failure ->
+            div []
+                [ text "Failed"
                 ]
-            ]
-        ]
+
+        Loading ->
+            text "Loading..."
+
+        Success book ->
+            div []
+                [ section [ class "hero is-link" ]
+                    [ div [ class "hero-body" ]
+                        [ div [ class "container" ]
+                            [ h1 [ class "title" ] [ text book.displayName ]
+                            , h2 [ class "subtitle" ] [ text book.description ]
+                            ]
+                        ]
+                    ]
+                , section [ class "section" ]
+                    [ div [ class "container" ]
+                        [ div [ class "columns", class "is-mobile" ]
+                            [ div [ class "column", class "is-3", class "is-offset-3" ]
+                                [ aside [ class "menu" ]
+                                    [ p [ class "menu-label" ] [ text "Options" ]
+                                    , ul [ class "menu-list" ]
+                                        [ li []
+                                            [ a [] [ text "Edit" ]
+                                            , a [ href book.path ] [ text "Download" ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            , div [ class "column is-3" ]
+                                [ img [ src ("http://read.jholmestech.com/assets/covers/" ++ book.id ++ ".jpg"), style "max-width" "300px" ] [] ]
+                            ]
+                        ]
+                    ]
+                ]
 
 
 
@@ -65,6 +106,6 @@ view model =
 getBook : BookID -> Cmd Msg
 getBook bookID =
     Http.get
-        { url = "https://docs.jholmestech.com/books/" ++ bookID
+        { url = "https://docs.jholmestech.com/documents/" ++ bookID
         , expect = Http.expectJson FetchBook bookDecoder
         }

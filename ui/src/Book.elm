@@ -7,6 +7,8 @@ import Json.Decode.Pipeline exposing (optional, required)
 type alias Book =
     { id : String
     , displayName : String
+    , description : String
+    , path : String
     }
 
 
@@ -19,6 +21,8 @@ bookDecoder =
     Decode.succeed Book
         |> required "id" string
         |> required "display_name" string
+        |> required "description" string
+        |> required "path" string
 
 
 booksDecoder : Decoder (List Book)

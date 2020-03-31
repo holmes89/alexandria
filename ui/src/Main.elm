@@ -133,6 +133,15 @@ update msg model =
             , Cmd.map ListBooksPageMsg updatedCmd
             )
 
+        ( ViewBookPageMsg subMsg, ViewBookPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    ViewBook.update subMsg pageModel
+            in
+            ( { model | page = ViewBookPage updatedPageModel }
+            , Cmd.map ViewBookPageMsg updatedCmd
+            )
+
         ( LinkClicked urlRequest, _ ) ->
             case urlRequest of
                 Browser.Internal url ->
