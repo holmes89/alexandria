@@ -17,7 +17,6 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
-      working-directory: "./ui"
     - name: Install Elm App
       run: yarn global add create-elm-app
     - name: Yarn dependencies
