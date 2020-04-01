@@ -69,7 +69,7 @@ view model =
 
         Success book ->
             div []
-                [ section [ class "hero is-link" ]
+                [ section [ class "hero is-light" ]
                     [ div [ class "hero-body" ]
                         [ div [ class "container" ]
                             [ h1 [ class "title" ] [ text book.displayName ]
@@ -79,8 +79,8 @@ view model =
                     ]
                 , section [ class "section" ]
                     [ div [ class "container" ]
-                        [ div [ class "columns", class "is-mobile" ]
-                            [ div [ class "column", class "is-3", class "is-offset-3" ]
+                        [ div [ class "columns is-centered is-mobile" ]
+                            [ div [ class "column", class "is-4" ]
                                 [ aside [ class "menu" ]
                                     [ p [ class "menu-label" ] [ text "Options" ]
                                     , ul [ class "menu-list" ]
@@ -91,7 +91,7 @@ view model =
                                         ]
                                     ]
                                 ]
-                            , div [ class "column is-3" ]
+                            , div [ class "column is-4" ]
                                 [ img [ src ("http://read.jholmestech.com/assets/covers/" ++ book.id ++ ".jpg"), style "max-width" "300px" ] [] ]
                             ]
                         ]

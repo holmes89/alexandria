@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
 import Page.ListBooks as ListBooks
+import Page.Login as Login
 import Page.ViewBook as ViewBook
 import Route exposing (Route)
 import Url exposing (Url)
@@ -33,11 +34,13 @@ type Page
     = NotFoundPage
     | ListBooksPage ListBooks.Model
     | ViewBookPage ViewBook.Model
+    | LoginPage Login.Model
 
 
 type Msg
     = ListBooksPageMsg ListBooks.Msg
     | ViewBookPageMsg ViewBook.Msg
+    | LoginPageMsg Login.Msg
     | LinkClicked UrlRequest
     | UrlChanged Url
 
@@ -61,6 +64,13 @@ initCurrentPage ( model, existingCmds ) =
             case model.route of
                 Route.NotFound ->
                     ( NotFoundPage, Cmd.none )
+
+                Route.Login ->
+                    let
+                        ( pageModel, pageCmds ) =
+                            Login.init
+                    in
+                    ( LoginPage pageModel, Cmd.map LoginPageMsg pageCmds )
 
                 Route.Books ->
                     let
@@ -91,7 +101,7 @@ view model =
 viewHeader : Model -> Html Msg
 viewHeader model =
     div []
-        [ nav [ class "navbar", class "is-light" ]
+        [ nav [ class "navbar", class "is-dark" ]
             [ div [ class "navbar-brand" ]
                 [ div [ class "navbar-item" ]
                     [ span [] [ text "Alexandria", img [ src "/alexandria.png" ] [] ]
@@ -106,6 +116,10 @@ currentView model =
     case model.page of
         NotFoundPage ->
             notFoundView
+
+        LoginPage pageModel ->
+            Login.view pageModel
+                |> Html.map LoginPageMsg
 
         ListBooksPage pageModel ->
             ListBooks.view pageModel
