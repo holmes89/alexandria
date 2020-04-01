@@ -18,10 +18,9 @@ jobs:
       with:
         node-version: 12.x
     - name: Install Elm App
-      run: yarn global add create-elm-app
-    - name: Yarn dependencies
-      run: yarn install
-      working-directory: "./ui"
+      run: npm install -g create-elm-app
+    - name: Npm dependencies
+      run: npm install -g elm@latest-0.19.1
     - name: Build Prod
       run: elm-app build
       working-directory: "./ui"
