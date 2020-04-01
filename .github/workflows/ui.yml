@@ -13,14 +13,18 @@ jobs:
     - uses: actions/checkout@v1
       with:
           path: "ui"
-    - name: Install dependencies
-      run: lein deps
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
       working-directory: "./ui"
+    - name: Install Elm App
+      run: yarn global add create-elm-app
     - name: Yarn dependencies
       run: yarn install
       working-directory: "./ui"
     - name: Build Prod
-      run: lein with-profile prod run -m shadow.cljs.devtools.cli release app --config-merge '{:closure-defines {alexandria.config/baseurl "https://alexandria-api-4josd7vm2q-ue.a.run.app"}}'
+      run: elm-app build
       working-directory: "./ui"
     - name: Authenticate into Google Cloud Platform
       uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
@@ -29,4 +33,4 @@ jobs:
          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
          service_account_key: ${{ secrets.GCLOUD_AUTH }}
     - name: Sync with GCP
-      run: "gsutil -m rsync -R ./ui/resources/public gs://read.jholmestech.com"
+      run: "gsutil -m rsync -R ./ui/build gs://read.jholmestech.com"
