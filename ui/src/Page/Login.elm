@@ -1,5 +1,6 @@
 module Page.Login exposing (..)
 
+import Base64
 import Html exposing (..)
 import Html.Attributes exposing (action, attribute, class, for, href, placeholder, required, src, style, type_)
 import Html.Events exposing (onClick, onInput)
@@ -59,9 +60,18 @@ updatePassword password model =
 
 submitLogin : Model -> Cmd Msg
 submitLogin model =
-    Http.get
-        { url = "https://" ++ model.username ++ ":" ++ model.password ++ "@docs.jholmestech.com/auth/"
+    let
+        auth =
+            "Basic " ++ Base64.encode (model.username ++ ":" ++ model.password)
+    in
+    Http.request
+        { body = Http.emptyBody
         , expect = Http.expectJson Login tokenDecoder
+        , headers = [ Http.header "Authorization" auth ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://docs.jholmestech.com/auth/"
         }
 
 

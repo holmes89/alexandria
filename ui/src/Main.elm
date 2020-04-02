@@ -138,6 +138,15 @@ notFoundView =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model.page ) of
+        ( LoginPageMsg subMsg, LoginPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    Login.update subMsg pageModel
+            in
+            ( { model | page = LoginPage updatedPageModel }
+            , Cmd.map LoginPageMsg updatedCmd
+            )
+
         ( ListBooksPageMsg subMsg, ListBooksPage pageModel ) ->
             let
                 ( updatedPageModel, updatedCmd ) =
