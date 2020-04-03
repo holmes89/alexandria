@@ -8,6 +8,7 @@ import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode exposing (Decoder, field, string)
 import Json.Decode.Pipeline as DecodePipeline
+import Session exposing (..)
 import Url exposing (Url)
 
 
@@ -16,10 +17,10 @@ import Url exposing (Url)
 
 
 type alias Model =
-    { navKey : Nav.Key
+    { session : Session
+    , navKey : Nav.Key
     , username : String
     , password : String
-    , token : String
     }
 
 
@@ -43,10 +44,10 @@ type Msg
 
 init : Nav.Key -> ( Model, Cmd Msg )
 init navKey =
-    ( { navKey = navKey
+    ( { session = Unauthenticated
+      , navKey = navKey
       , username = ""
       , password = ""
-      , token = ""
       }
     , Cmd.none
     )
@@ -94,10 +95,10 @@ update msg model =
         Login result ->
             case result of
                 Ok url ->
-                    ( { model | token = url.token }, Nav.pushUrl model.navKey "/books" )
+                    ( { model | session = Authenticated url.token }, Nav.pushUrl model.navKey "/books" )
 
                 Err _ ->
-                    ( { model | token = "invalid login" }, Cmd.none )
+                    ( { model | session = Unauthenticated }, Cmd.none )
 
 
 view : Model -> Html Msg
@@ -142,5 +143,4 @@ view model =
                     ]
                 ]
             ]
-        , div [] [ text model.token ]
         ]
