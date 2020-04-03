@@ -92,13 +92,8 @@ update msg model =
         SubmitLogin ->
             ( model, submitLogin model )
 
-        Login result ->
-            case result of
-                Ok url ->
-                    ( { model | session = Authenticated url.token }, Nav.pushUrl model.navKey "/books" )
-
-                Err _ ->
-                    ( { model | session = Unauthenticated }, Cmd.none )
+        Login _ ->
+            ( model, Cmd.none )
 
 
 view : Model -> Html Msg

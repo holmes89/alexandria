@@ -26,6 +26,7 @@ matchRoute : Parser (Route -> a) a
 matchRoute =
     oneOf
         [ map Login top
+        , map Login (s "login")
         , map Books (s "books")
         , map Book (s "books" </> string)
         ]

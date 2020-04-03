@@ -8,6 +8,7 @@ import Page.ListBooks as ListBooks
 import Page.Login as Login
 import Page.ViewBook as ViewBook
 import Route exposing (Route)
+import Session exposing (..)
 import Url exposing (Url)
 
 
@@ -27,6 +28,7 @@ type alias Model =
     { route : Route
     , page : Page
     , navKey : Nav.Key
+    , session : Session
     }
 
 
@@ -52,6 +54,7 @@ init flags url navKey =
             { route = Route.parseUrl url
             , page = NotFoundPage
             , navKey = navKey
+            , session = Unauthenticated
             }
     in
     initCurrentPage ( model, Cmd.none )
@@ -135,18 +138,9 @@ notFoundView =
     h3 [] [ text "Oops! The page you requested was not found!" ]
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+updateAuthenticated : Msg -> Model -> ( Model, Cmd Msg )
+updateAuthenticated msg model =
     case ( msg, model.page ) of
-        ( LoginPageMsg subMsg, LoginPage pageModel ) ->
-            let
-                ( updatedPageModel, updatedCmd ) =
-                    Login.update subMsg pageModel
-            in
-            ( { model | page = LoginPage updatedPageModel }
-            , Cmd.map LoginPageMsg updatedCmd
-            )
-
         ( ListBooksPageMsg subMsg, ListBooksPage pageModel ) ->
             let
                 ( updatedPageModel, updatedCmd ) =
@@ -187,3 +181,59 @@ update msg model =
 
         ( _, _ ) ->
             ( model, Cmd.none )
+
+
+updateUnauthenticated : Msg -> Model -> ( Model, Cmd Msg )
+updateUnauthenticated msg model =
+    case ( msg, model.page ) of
+        ( LoginPageMsg subMsg, LoginPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    Login.update subMsg pageModel
+            in
+            case subMsg of
+                Login.Login result ->
+                    case result of
+                        Ok url ->
+                            ( { model | session = Authenticated url.token }, Nav.pushUrl model.navKey "/books" )
+
+                        Err _ ->
+                            ( { model | session = Unauthenticated }, Cmd.none )
+
+                _ ->
+                    ( { model | page = LoginPage updatedPageModel }
+                    , Cmd.map LoginPageMsg updatedCmd
+                    )
+
+        ( LinkClicked urlRequest, _ ) ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model
+                    , Nav.pushUrl model.navKey (Url.toString url)
+                    )
+
+                Browser.External url ->
+                    ( model
+                    , Nav.load url
+                    )
+
+        ( UrlChanged url, _ ) ->
+            let
+                newRoute =
+                    Route.parseUrl url
+            in
+            ( { model | route = newRoute }, Cmd.none )
+                |> initCurrentPage
+
+        ( _, _ ) ->
+            ( model, Nav.pushUrl model.navKey "/login" )
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case model.session of
+        Authenticated token ->
+            updateAuthenticated msg model
+
+        Unauthenticated ->
+            updateUnauthenticated msg model
