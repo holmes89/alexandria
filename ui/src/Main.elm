@@ -68,7 +68,7 @@ initCurrentPage ( model, existingCmds ) =
                 Route.Login ->
                     let
                         ( pageModel, pageCmds ) =
-                            Login.init
+                            Login.init model.navKey
                     in
                     ( LoginPage pageModel, Cmd.map LoginPageMsg pageCmds )
 

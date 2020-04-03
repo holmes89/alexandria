@@ -1,12 +1,14 @@
 module Page.Login exposing (..)
 
 import Base64
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (action, attribute, class, for, href, placeholder, required, src, style, type_)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode exposing (Decoder, field, string)
 import Json.Decode.Pipeline as DecodePipeline
+import Url exposing (Url)
 
 
 
@@ -14,7 +16,8 @@ import Json.Decode.Pipeline as DecodePipeline
 
 
 type alias Model =
-    { username : String
+    { navKey : Nav.Key
+    , username : String
     , password : String
     , token : String
     }
@@ -38,9 +41,10 @@ type Msg
     | Login (Result Http.Error Token)
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { username = ""
+init : Nav.Key -> ( Model, Cmd Msg )
+init navKey =
+    ( { navKey = navKey
+      , username = ""
       , password = ""
       , token = ""
       }
@@ -62,7 +66,7 @@ submitLogin : Model -> Cmd Msg
 submitLogin model =
     let
         auth =
-            "Basic " ++ Base64.encode (model.username ++ ":" ++ model.password)
+            "Basic " ++ Base64.encode (String.trim model.username ++ ":" ++ String.trim model.password)
     in
     Http.request
         { body = Http.emptyBody
@@ -90,7 +94,7 @@ update msg model =
         Login result ->
             case result of
                 Ok url ->
-                    ( { model | token = url.token }, Cmd.none )
+                    ( { model | token = url.token }, Nav.pushUrl model.navKey "/books" )
 
                 Err _ ->
                     ( { model | token = "invalid login" }, Cmd.none )
