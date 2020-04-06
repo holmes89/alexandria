@@ -78,7 +78,7 @@ initCurrentPage ( model, existingCmds ) =
                 Route.Books ->
                     let
                         ( pageModel, pageCmds ) =
-                            ListBooks.init
+                            ListBooks.init model.session
                     in
                     ( ListBooksPage pageModel, Cmd.map ListBooksPageMsg pageCmds )
 

@@ -5,21 +5,32 @@ import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
 import Html.Events exposing (..)
 import Http
+import Session exposing (..)
 
 
 
 -- MODEL
 
 
-type Model
+type Status
     = Failure
     | Loading
     | Success (List Book)
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( Loading, fetchBooks )
+type alias Model =
+    { session : Session
+    , status : Status
+    }
+
+
+init : Session -> ( Model, Cmd Msg )
+init session =
+    ( { session = session
+      , status = Loading
+      }
+    , fetchBooks
+    )
 
 
 
@@ -36,10 +47,10 @@ update msg model =
         FetchBooks result ->
             case result of
                 Ok url ->
-                    ( Success url, Cmd.none )
+                    ( { model | status = Success url }, Cmd.none )
 
                 Err _ ->
-                    ( Failure, Cmd.none )
+                    ( { model | status = Failure }, Cmd.none )
 
 
 
@@ -70,7 +81,7 @@ view model =
 
 viewBooks : Model -> Html Msg
 viewBooks model =
-    case model of
+    case model.status of
         Failure ->
             div []
                 [ text "Failed"
