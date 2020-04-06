@@ -1,239 +1,195 @@
 module Main exposing (main)
 
-import Browser exposing (Document, UrlRequest)
+import Api exposing (Cred)
+import Avatar exposing (Avatar)
+import Browser exposing (Document)
 import Browser.Navigation as Nav
 import Html exposing (..)
-import Html.Attributes exposing (class, href, src, style)
-import Page.ListBooks as ListBooks
+import Json.Decode as Decode exposing (Value)
+import Page exposing (Page)
+import Page.Blank as Blank
 import Page.Login as Login
-import Page.ViewBook as ViewBook
+import Page.NotFound as NotFound
 import Route exposing (Route)
-import Session exposing (..)
+import Session exposing (Session)
+import Task
+import Time
 import Url exposing (Url)
+import Username exposing (Username)
+import Viewer exposing (Viewer)
 
 
-main : Program () Model Msg
-main =
-    Browser.application
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = \_ -> Sub.none
-        , onUrlRequest = LinkClicked
-        , onUrlChange = UrlChanged
-        }
+type Model
+    = Redirect Session
+    | NotFound Session
+    | Login Login.Model
 
 
-type alias Model =
-    { route : Route
-    , page : Page
-    , navKey : Nav.Key
-    , session : Session
-    }
+
+-- MODEL
 
 
-type Page
-    = NotFoundPage
-    | ListBooksPage ListBooks.Model
-    | ViewBookPage ViewBook.Model
-    | LoginPage Login.Model
+init : Maybe Viewer -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init maybeViewer url navKey =
+    changeRouteTo (Route.fromUrl url)
+        (Redirect (Session.fromViewer navKey maybeViewer))
 
 
-type Msg
-    = ListBooksPageMsg ListBooks.Msg
-    | ViewBookPageMsg ViewBook.Msg
-    | LoginPageMsg Login.Msg
-    | LinkClicked UrlRequest
-    | UrlChanged Url
 
-
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url navKey =
-    let
-        model =
-            { route = Route.parseUrl url
-            , page = NotFoundPage
-            , navKey = navKey
-            , session = Unauthenticated
-            }
-    in
-    initCurrentPage ( model, Cmd.none )
-
-
-initCurrentPage : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-initCurrentPage ( model, existingCmds ) =
-    let
-        ( currentPage, mappedPageCmds ) =
-            case model.route of
-                Route.NotFound ->
-                    ( NotFoundPage, Cmd.none )
-
-                Route.Login ->
-                    let
-                        ( pageModel, pageCmds ) =
-                            Login.init model.navKey
-                    in
-                    ( LoginPage pageModel, Cmd.map LoginPageMsg pageCmds )
-
-                Route.Books ->
-                    let
-                        ( pageModel, pageCmds ) =
-                            ListBooks.init model.session
-                    in
-                    ( ListBooksPage pageModel, Cmd.map ListBooksPageMsg pageCmds )
-
-                Route.Book bookID ->
-                    let
-                        ( pageModel, pageCmds ) =
-                            ViewBook.init bookID model.navKey
-                    in
-                    ( ViewBookPage pageModel, Cmd.map ViewBookPageMsg pageCmds )
-    in
-    ( { model | page = currentPage }
-    , Cmd.batch [ existingCmds, mappedPageCmds ]
-    )
+-- VIEW
 
 
 view : Model -> Document Msg
 view model =
-    { title = "Alexandria"
-    , body = [ viewHeader model, currentView model ]
-    }
+    let
+        viewer =
+            Session.viewer (toSession model)
 
-
-viewHeader : Model -> Html Msg
-viewHeader model =
-    div []
-        [ nav [ class "navbar", class "is-dark" ]
-            [ div [ class "navbar-brand" ]
-                [ div [ class "navbar-item" ]
-                    [ span [] [ text "Alexandria", img [ src "/alexandria.png" ] [] ]
-                    ]
-                ]
-            ]
-        ]
-
-
-currentView : Model -> Html Msg
-currentView model =
-    case model.page of
-        NotFoundPage ->
-            notFoundView
-
-        LoginPage pageModel ->
-            Login.view pageModel
-                |> Html.map LoginPageMsg
-
-        ListBooksPage pageModel ->
-            ListBooks.view pageModel
-                |> Html.map ListBooksPageMsg
-
-        ViewBookPage pageModel ->
-            ViewBook.view pageModel
-                |> Html.map ViewBookPageMsg
-
-
-notFoundView : Html msg
-notFoundView =
-    h3 [] [ text "Oops! The page you requested was not found!" ]
-
-
-updateAuthenticated : Msg -> Model -> ( Model, Cmd Msg )
-updateAuthenticated msg model =
-    case ( msg, model.page ) of
-        ( ListBooksPageMsg subMsg, ListBooksPage pageModel ) ->
+        viewPage page toMsg config =
             let
-                ( updatedPageModel, updatedCmd ) =
-                    ListBooks.update subMsg pageModel
+                { title, body } =
+                    Page.view viewer page config
             in
-            ( { model | page = ListBooksPage updatedPageModel }
-            , Cmd.map ListBooksPageMsg updatedCmd
-            )
+            { title = title
+            , body = List.map (Html.map toMsg) body
+            }
+    in
+    case model of
+        Redirect _ ->
+            Page.view viewer Page.Other Blank.view
 
-        ( ViewBookPageMsg subMsg, ViewBookPage pageModel ) ->
-            let
-                ( updatedPageModel, updatedCmd ) =
-                    ViewBook.update subMsg pageModel
-            in
-            ( { model | page = ViewBookPage updatedPageModel }
-            , Cmd.map ViewBookPageMsg updatedCmd
-            )
+        NotFound _ ->
+            Page.view viewer Page.Other NotFound.view
 
-        ( LinkClicked urlRequest, _ ) ->
-            case urlRequest of
-                Browser.Internal url ->
-                    ( model
-                    , Nav.pushUrl model.navKey (Url.toString url)
-                    )
-
-                Browser.External url ->
-                    ( model
-                    , Nav.load url
-                    )
-
-        ( UrlChanged url, _ ) ->
-            let
-                newRoute =
-                    Route.parseUrl url
-            in
-            ( { model | route = newRoute }, Cmd.none )
-                |> initCurrentPage
-
-        ( _, _ ) ->
-            ( model, Cmd.none )
+        Login login ->
+            viewPage Page.Other GotLoginMsg (Login.view login)
 
 
-updateUnauthenticated : Msg -> Model -> ( Model, Cmd Msg )
-updateUnauthenticated msg model =
-    case ( msg, model.page ) of
-        ( LoginPageMsg subMsg, LoginPage pageModel ) ->
-            let
-                ( updatedPageModel, updatedCmd ) =
-                    Login.update subMsg pageModel
-            in
-            case subMsg of
-                Login.Login result ->
-                    case result of
-                        Ok url ->
-                            ( { model | session = Authenticated url.token }, Nav.pushUrl model.navKey "/books" )
 
-                        Err _ ->
-                            ( { model | session = Unauthenticated }, Cmd.none )
+-- UPDATE
 
-                _ ->
-                    ( { model | page = LoginPage updatedPageModel }
-                    , Cmd.map LoginPageMsg updatedCmd
-                    )
 
-        ( LinkClicked urlRequest, _ ) ->
-            case urlRequest of
-                Browser.Internal url ->
-                    ( model
-                    , Nav.pushUrl model.navKey (Url.toString url)
-                    )
+type Msg
+    = ChangedUrl Url
+    | ClickedLink Browser.UrlRequest
+    | GotLoginMsg Login.Msg
+    | GotSession Session
 
-                Browser.External url ->
-                    ( model
-                    , Nav.load url
-                    )
 
-        ( UrlChanged url, _ ) ->
-            let
-                newRoute =
-                    Route.parseUrl url
-            in
-            ( { model | route = newRoute }, Cmd.none )
-                |> initCurrentPage
+toSession : Model -> Session
+toSession page =
+    case page of
+        Redirect session ->
+            session
 
-        ( _, _ ) ->
-            ( model, Nav.pushUrl model.navKey "/login" )
+        NotFound session ->
+            session
+
+        Login login ->
+            Login.toSession login
+
+
+changeRouteTo : Maybe Route -> Model -> ( Model, Cmd Msg )
+changeRouteTo maybeRoute model =
+    let
+        session =
+            toSession model
+    in
+    case maybeRoute of
+        Nothing ->
+            ( NotFound session, Cmd.none )
+
+        Just Route.Root ->
+            ( model, Route.replaceUrl (Session.navKey session) Route.Home )
+
+        Just Route.Logout ->
+            ( model, Api.logout )
+
+        Just Route.Login ->
+            Login.init session
+                |> updateWith Login GotLoginMsg model
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model.session of
-        Authenticated token ->
-            updateAuthenticated msg model
+    case ( msg, model ) of
+        ( ClickedLink urlRequest, _ ) ->
+            case urlRequest of
+                Browser.Internal url ->
+                    case url.fragment of
+                        Nothing ->
+                            -- If we got a link that didn't include a fragment,
+                            -- it's from one of those (href "") attributes that
+                            -- we have to include to make the RealWorld CSS work.
+                            --
+                            -- In an application doing path routing instead of
+                            -- fragment-based routing, this entire
+                            -- `case url.fragment of` expression this comment
+                            -- is inside would be unnecessary.
+                            ( model, Cmd.none )
 
-        Unauthenticated ->
-            updateUnauthenticated msg model
+                        Just _ ->
+                            ( model
+                            , Nav.pushUrl (Session.navKey (toSession model)) (Url.toString url)
+                            )
+
+                Browser.External href ->
+                    ( model
+                    , Nav.load href
+                    )
+
+        ( ChangedUrl url, _ ) ->
+            changeRouteTo (Route.fromUrl url) model
+
+        ( GotLoginMsg subMsg, Login login ) ->
+            Login.update subMsg login
+                |> updateWith Login GotLoginMsg model
+
+        ( GotSession session, Redirect _ ) ->
+            ( Redirect session
+            , Route.replaceUrl (Session.navKey session) Route.Home
+            )
+
+        ( _, _ ) ->
+            -- Disregard messages that arrived for the wrong page.
+            ( model, Cmd.none )
+
+
+updateWith : (subModel -> Model) -> (subMsg -> Msg) -> Model -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith toModel toMsg model ( subModel, subCmd ) =
+    ( toModel subModel
+    , Cmd.map toMsg subCmd
+    )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model of
+        NotFound _ ->
+            Sub.none
+
+        Redirect _ ->
+            Session.changes GotSession (Session.navKey (toSession model))
+
+        Login login ->
+            Sub.map GotLoginMsg (Login.subscriptions login)
+
+
+
+-- MAIN
+
+
+main : Program Value Model Msg
+main =
+    Api.application Viewer.decoder
+        { init = init
+        , onUrlChange = ChangedUrl
+        , onUrlRequest = ClickedLink
+        , subscriptions = subscriptions
+        , update = update
+        , view = view
+        }

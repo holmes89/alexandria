@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css?family=Gentium+Book+Basic|Merriweather&display=swap');
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Gentium Book Basic', sans-serif;
+}
+
+html, body {
+  font-family: 'Merriweather', sans-serif;
+}
+
+/* Nav */
+.navbar-brand {
+  font-weight: bold;
+  font-family: 'Gentium Book Basic', sans-serif;
+  font-size: 24px;
+}
+
+.navbar-brand img {
+  vertical-align: top;
+}
+/* Title */
+
+h1.main-title {
+  font-size: 64px;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+
+
+/* Read Panel */
+
+h1.read-title {
+  font-size: 64px;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+#doc {
+  text-align: center;
+  border-left: 1px solid #bbb;
+  border-right: 1px solid #bbb;
+  max-height: 100vh;
+  overflow: auto;
+}
+
+a.page-turn {
+  height: 100vh;
+  text-align: center;
+  display: flex;
+  align-items: center;
+}
+
+a.page-turn:hover {
+  background-color: #eee;
+}
+
+a.page-turn .fa-arrow-right,
+a.page-turn .fa-arrow-left{
+  width: 100%;
+}
+
+#doc canvas {
+  display: inline !important;
+}
+
+#read-bar a:hover, #read-bar a:visited {
+  color: white;
+}
+
+#read-bar .navbar-start.centered {
+
+  justify-content: flex-start;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+#read-bar .navbar-end {
+  margin-right: 20px;
+}
+
+#read-bar svg {
+  margin: 15px 5px;
+}
+
+#read-bar h3.book-title {
+  font-family: 'Merriweather', sans-serif;
+  font-size: 18px;
+}
+
+a.card-footer-item .fa-book-open {
+  margin-right: 10px;
+}
+
+
+header.card-header > p.card-header-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
