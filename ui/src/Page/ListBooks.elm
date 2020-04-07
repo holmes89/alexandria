@@ -108,7 +108,7 @@ viewBooks model =
                                     [ p [ class "card-header-title" ] [ text l.displayName ]
                                     ]
                                 , div [ class "card-content", style "text-align" "center" ]
-                                    [ img [ src ("http://read.jholmestech.com/assets/covers/" ++ l.id ++ ".jpg"), style "max-width" "300px" ] []
+                                    [ img [ src ("http://read.jholmestech.com/assets/covers/" ++ l.id ++ ".jpg"), style "max-width" "300px", class "cover" ] []
                                     ]
                                 , footer [ class "card-footer" ]
                                     [ a [ class "card-footer-item", href viewPath ] [ i [ class "fas", class "fa-book-open" ] [], text "View" ]

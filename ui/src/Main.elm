@@ -4,6 +4,7 @@ import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
+import Json.Decode as Decode exposing (Value)
 import Page.ListBooks as ListBooks
 import Page.Login as Login
 import Page.ViewBook as ViewBook
@@ -12,7 +13,7 @@ import Session exposing (..)
 import Url exposing (Url)
 
 
-main : Program () Model Msg
+main : Program (Maybe String) Model Msg
 main =
     Browser.application
         { init = init
@@ -46,17 +47,36 @@ type Msg
     | LoginPageMsg Login.Msg
     | LinkClicked UrlRequest
     | UrlChanged Url
+    | LoggedIn Msg
 
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init : Maybe String -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url navKey =
     let
         model =
-            { route = Route.parseUrl url
-            , page = NotFoundPage
-            , navKey = navKey
-            , session = Unauthenticated
-            }
+            case flags of
+                Nothing ->
+                    { route = Route.parseUrl url
+                    , page = NotFoundPage
+                    , navKey = navKey
+                    , session = Unauthenticated
+                    }
+
+                Just value ->
+                    case Decode.decodeString Session.storageDecoder value of
+                        Ok token ->
+                            { route = Route.parseUrl url
+                            , page = NotFoundPage
+                            , navKey = navKey
+                            , session = Authenticated token
+                            }
+
+                        _ ->
+                            { route = Route.parseUrl url
+                            , page = NotFoundPage
+                            , navKey = navKey
+                            , session = Unauthenticated
+                            }
     in
     initCurrentPage ( model, Cmd.none )
 
@@ -117,8 +137,10 @@ viewHeader model =
     div []
         [ nav [ class "navbar", class "is-dark" ]
             [ div [ class "navbar-brand" ]
-                [ div [ class "navbar-item" ]
-                    [ span [] [ text "Alexandria", img [ src "/alexandria.png" ] [] ]
+                [ a [ href "/" ]
+                    [ div [ class "navbar-item" ]
+                        [ span [ style "color" "white" ] [ text "Alexandria", img [ src "/alexandria.png" ] [] ]
+                        ]
                     ]
                 ]
             ]
@@ -187,7 +209,7 @@ update msg model =
                 Login.Login result ->
                     case result of
                         Ok url ->
-                            ( { model | session = Authenticated url.token }, Nav.pushUrl model.navKey "/books" )
+                            ( { model | session = Authenticated url.token }, Cmd.batch [ Session.storeCredWith url.token, Nav.pushUrl model.navKey "/books" ] )
 
                         Err _ ->
                             ( { model | session = Unauthenticated }, Cmd.none )
