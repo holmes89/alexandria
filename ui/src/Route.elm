@@ -11,6 +11,7 @@ type Route
     | Login
     | Books
     | Book BookID
+    | Journal
 
 
 parseUrl : Url -> Route
@@ -30,4 +31,5 @@ matchRoute =
         , map Login (s "login")
         , map Books (s "books")
         , map Book (s "books" </> string)
+        , map Journal (s "journal")
         ]

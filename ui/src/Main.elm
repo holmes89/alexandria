@@ -6,6 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
 import Json.Decode as Decode exposing (Value)
 import Page.Home as Home
+import Page.Journal as Journal
 import Page.ListBooks as ListBooks
 import Page.Login as Login
 import Page.ViewBook as ViewBook
@@ -41,6 +42,7 @@ type Page
     | ViewBookPage ViewBook.Model
     | LoginPage Login.Model
     | HomePage
+    | JournalPage
 
 
 type Msg
@@ -94,6 +96,9 @@ initCurrentPage ( model, existingCmds ) =
                 ( Route.Home, Authenticated token ) ->
                     ( HomePage, Cmd.none )
 
+                ( Route.Journal, Authenticated token ) ->
+                    ( JournalPage, Cmd.none )
+
                 ( Route.Home, Unauthenticated ) ->
                     ( HomePage, Nav.pushUrl model.navKey "/login" )
 
@@ -131,15 +136,22 @@ initCurrentPage ( model, existingCmds ) =
 
 view : Model -> Document Msg
 view model =
-    { title = "Alexandria"
-    , body = [ viewHeader model, navbar, currentView model ]
-    }
+    case model.session of
+        Authenticated _ ->
+            { title = "Alexandria"
+            , body = [ viewHeader model, navbar, currentView model ]
+            }
+
+        Unauthenticated ->
+            { title = "Alexandria"
+            , body = [ viewHeader model, currentView model ]
+            }
 
 
 navbar : Html Msg
 navbar =
-    div [ class "section  is-dark" ]
-        [ div [ class "tabs is-toggle is-toggle-rounded is-centered" ]
+    div [ class "is-dark" ]
+        [ div [ class "tabs is-toggle is-centered" ]
             [ ul []
                 (List.map
                     (\area ->
@@ -225,6 +237,9 @@ currentView model =
 
         HomePage ->
             Home.view
+
+        JournalPage ->
+            Journal.view
 
         UnauthorizedPage ->
             unauthorizedView
