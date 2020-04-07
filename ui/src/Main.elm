@@ -5,6 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
 import Json.Decode as Decode exposing (Value)
+import Page.Home as Home
 import Page.ListBooks as ListBooks
 import Page.Login as Login
 import Page.ViewBook as ViewBook
@@ -39,6 +40,7 @@ type Page
     | ListBooksPage ListBooks.Model
     | ViewBookPage ViewBook.Model
     | LoginPage Login.Model
+    | HomePage
 
 
 type Msg
@@ -89,6 +91,12 @@ initCurrentPage ( model, existingCmds ) =
                 ( Route.NotFound, _ ) ->
                     ( NotFoundPage, Cmd.none )
 
+                ( Route.Home, Authenticated token ) ->
+                    ( HomePage, Cmd.none )
+
+                ( Route.Home, Unauthenticated ) ->
+                    ( HomePage, Nav.pushUrl model.navKey "/login" )
+
                 ( Route.Login, Unauthenticated ) ->
                     let
                         ( pageModel, pageCmds ) =
@@ -97,11 +105,7 @@ initCurrentPage ( model, existingCmds ) =
                     ( LoginPage pageModel, Cmd.map LoginPageMsg pageCmds )
 
                 ( Route.Login, Authenticated token ) ->
-                    let
-                        ( pageModel, pageCmds ) =
-                            ListBooks.init token
-                    in
-                    ( ListBooksPage pageModel, Cmd.map ListBooksPageMsg pageCmds )
+                    ( HomePage, Nav.pushUrl model.navKey "/" )
 
                 ( Route.Books, Authenticated token ) ->
                     let
@@ -128,8 +132,74 @@ initCurrentPage ( model, existingCmds ) =
 view : Model -> Document Msg
 view model =
     { title = "Alexandria"
-    , body = [ viewHeader model, currentView model ]
+    , body = [ viewHeader model, navbar, currentView model ]
     }
+
+
+navbar : Html Msg
+navbar =
+    div [ class "section  is-dark" ]
+        [ div [ class "tabs is-toggle is-toggle-rounded is-centered" ]
+            [ ul []
+                (List.map
+                    (\area ->
+                        li []
+                            [ a [ href area.endpoint ]
+                                [ span [ class "icon is-small" ]
+                                    [ i [ class "fas", class area.icon ] []
+                                    ]
+                                , span [] [ text area.name ]
+                                ]
+                            ]
+                    )
+                    commonAreas
+                )
+            ]
+        ]
+
+
+type alias Area =
+    { name : String
+    , endpoint : String
+    , icon : String
+    }
+
+
+commonAreas : List Area
+commonAreas =
+    [ { name = "Books"
+      , endpoint = "/books"
+      , icon = "fa-book"
+      }
+    , { name = "Papers"
+      , endpoint = "/papers"
+      , icon = "fa-paper-plane"
+      }
+    , { name = "Journal"
+      , endpoint = "/journal"
+      , icon = "fa-comment"
+      }
+    , { name = "Links"
+      , endpoint = "/links"
+      , icon = "fa-link"
+      }
+    , { name = "Tags"
+      , endpoint = "/tags"
+      , icon = "fa-tags"
+      }
+    , { name = "Ideas"
+      , endpoint = "/ideas"
+      , icon = "fa-lightbulb"
+      }
+    , { name = "Map"
+      , endpoint = "/map"
+      , icon = "fa-project-diagram"
+      }
+    , { name = "Search"
+      , endpoint = "/search"
+      , icon = "fa-search"
+      }
+    ]
 
 
 viewHeader : Model -> Html Msg
@@ -152,6 +222,9 @@ currentView model =
     case model.page of
         NotFoundPage ->
             notFoundView
+
+        HomePage ->
+            Home.view
 
         UnauthorizedPage ->
             unauthorizedView
@@ -209,7 +282,7 @@ update msg model =
                 Login.Login result ->
                     case result of
                         Ok url ->
-                            ( { model | session = Authenticated url.token }, Cmd.batch [ Session.storeCredWith url.token, Nav.pushUrl model.navKey "/books" ] )
+                            ( { model | session = Authenticated url.token }, Cmd.batch [ Session.storeCredWith url.token, Nav.pushUrl model.navKey "/" ] )
 
                         Err _ ->
                             ( { model | session = Unauthenticated }, Cmd.none )
