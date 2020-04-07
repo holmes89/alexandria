@@ -34,6 +34,7 @@ type alias Model =
 
 type Page
     = NotFoundPage
+    | UnauthorizedPage
     | ListBooksPage ListBooks.Model
     | ViewBookPage ViewBook.Model
     | LoginPage Login.Model
@@ -64,30 +65,40 @@ initCurrentPage : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 initCurrentPage ( model, existingCmds ) =
     let
         ( currentPage, mappedPageCmds ) =
-            case model.route of
-                Route.NotFound ->
+            case ( model.route, model.session ) of
+                ( Route.NotFound, _ ) ->
                     ( NotFoundPage, Cmd.none )
 
-                Route.Login ->
+                ( Route.Login, Unauthenticated ) ->
                     let
                         ( pageModel, pageCmds ) =
                             Login.init model.navKey
                     in
                     ( LoginPage pageModel, Cmd.map LoginPageMsg pageCmds )
 
-                Route.Books ->
+                ( Route.Login, Authenticated token ) ->
                     let
                         ( pageModel, pageCmds ) =
-                            ListBooks.init model.session
+                            ListBooks.init token
                     in
                     ( ListBooksPage pageModel, Cmd.map ListBooksPageMsg pageCmds )
 
-                Route.Book bookID ->
+                ( Route.Books, Authenticated token ) ->
                     let
                         ( pageModel, pageCmds ) =
-                            ViewBook.init bookID model.navKey model.session
+                            ListBooks.init token
+                    in
+                    ( ListBooksPage pageModel, Cmd.map ListBooksPageMsg pageCmds )
+
+                ( Route.Book bookID, Authenticated token ) ->
+                    let
+                        ( pageModel, pageCmds ) =
+                            ViewBook.init bookID model.navKey token
                     in
                     ( ViewBookPage pageModel, Cmd.map ViewBookPageMsg pageCmds )
+
+                ( _, Unauthenticated ) ->
+                    ( UnauthorizedPage, Cmd.none )
     in
     ( { model | page = currentPage }
     , Cmd.batch [ existingCmds, mappedPageCmds ]
@@ -120,6 +131,9 @@ currentView model =
         NotFoundPage ->
             notFoundView
 
+        UnauthorizedPage ->
+            unauthorizedView
+
         LoginPage pageModel ->
             Login.view pageModel
                 |> Html.map LoginPageMsg
@@ -138,8 +152,13 @@ notFoundView =
     h3 [] [ text "Oops! The page you requested was not found!" ]
 
 
-updateAuthenticated : Msg -> Model -> Token -> ( Model, Cmd Msg )
-updateAuthenticated msg model token =
+unauthorizedView : Html msg
+unauthorizedView =
+    h3 [] [ text "Forbidden" ]
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case ( msg, model.page ) of
         ( ListBooksPageMsg subMsg, ListBooksPage pageModel ) ->
             let
@@ -159,33 +178,6 @@ updateAuthenticated msg model token =
             , Cmd.map ViewBookPageMsg updatedCmd
             )
 
-        ( LinkClicked urlRequest, _ ) ->
-            case urlRequest of
-                Browser.Internal url ->
-                    ( model
-                    , Nav.pushUrl model.navKey (Url.toString url)
-                    )
-
-                Browser.External url ->
-                    ( model
-                    , Nav.load url
-                    )
-
-        ( UrlChanged url, _ ) ->
-            let
-                newRoute =
-                    Route.parseUrl url
-            in
-            ( { model | route = newRoute }, Cmd.none )
-                |> initCurrentPage
-
-        ( _, _ ) ->
-            ( model, Cmd.none )
-
-
-updateUnauthenticated : Msg -> Model -> ( Model, Cmd Msg )
-updateUnauthenticated msg model =
-    case ( msg, model.page ) of
         ( LoginPageMsg subMsg, LoginPage pageModel ) ->
             let
                 ( updatedPageModel, updatedCmd ) =
@@ -226,14 +218,4 @@ updateUnauthenticated msg model =
                 |> initCurrentPage
 
         ( _, _ ) ->
-            ( model, Nav.pushUrl model.navKey "/login" )
-
-
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case model.session of
-        Authenticated token ->
-            updateAuthenticated msg model token
-
-        Unauthenticated ->
-            updateUnauthenticated msg model
+            ( model, Cmd.none )

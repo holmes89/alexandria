@@ -11,7 +11,7 @@ import Session exposing (..)
 type alias Model =
     { navKey : Nav.Key
     , status : Status
-    , session : Session
+    , token : Token
     }
 
 
@@ -21,16 +21,16 @@ type Status
     | Success Book
 
 
-init : BookID -> Nav.Key -> Session -> ( Model, Cmd Msg )
-init bookID navKey session =
-    ( initialModel navKey session, getBook bookID session )
+init : BookID -> Nav.Key -> Token -> ( Model, Cmd Msg )
+init bookID navKey token =
+    ( initialModel navKey token, getBook bookID token )
 
 
-initialModel : Nav.Key -> Session -> Model
-initialModel navKey session =
+initialModel : Nav.Key -> Token -> Model
+initialModel navKey token =
     { navKey = navKey
     , status = Loading
-    , session = session
+    , token = token
     }
 
 
@@ -106,18 +106,14 @@ view model =
 -- HTTP
 
 
-getBook : BookID -> Session -> Cmd Msg
-getBook bookID session =
-  case session of
-    Authenticated token ->
-      Http.request
-          { body = Http.emptyBody
-          , expect = Http.expectJson FetchBook bookDecoder
-          , headers = [ Http.header "Authorization" token ]
-          , method = "GET"
-          , timeout = Nothing
-          , tracker = Nothing
-          , url = "https://docs.jholmestech.com/documents/" ++ bookID
-          }
-    Unauthenticated ->
-        Cmd.none
+getBook : BookID -> Token -> Cmd Msg
+getBook bookID token =
+    Http.request
+        { body = Http.emptyBody
+        , expect = Http.expectJson FetchBook bookDecoder
+        , headers = [ Http.header "Authorization" token ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://docs.jholmestech.com/documents/" ++ bookID
+        }

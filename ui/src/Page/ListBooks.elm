@@ -19,17 +19,17 @@ type Status
 
 
 type alias Model =
-    { session : Session
+    { token : Token
     , status : Status
     }
 
 
-init : Session -> ( Model, Cmd Msg )
-init session =
-    ( { session = session
+init : Token -> ( Model, Cmd Msg )
+init token =
+    ( { token = token
       , status = Loading
       }
-    , fetchBooks session
+    , fetchBooks token
     )
 
 
@@ -52,8 +52,9 @@ update msg model =
 
                 Err _ ->
                     ( { model | status = Failure }, Cmd.none )
+
         Error ->
-          ( { model | status = Failure }, Cmd.none )
+            ( { model | status = Failure }, Cmd.none )
 
 
 
@@ -123,18 +124,14 @@ viewBooks model =
 -- HTTP
 
 
-fetchBooks : Session -> Cmd Msg
-fetchBooks session =
-  case session of
-    Authenticated token ->
-      Http.request
-          { body = Http.emptyBody
-          , expect = Http.expectJson FetchBooks booksDecoder
-          , headers = [ Http.header "Authorization" token ]
-          , method = "GET"
-          , timeout = Nothing
-          , tracker = Nothing
-          , url = "https://docs.jholmestech.com/books/"
-          }
-    Unauthenticated ->
-        Cmd.none
+fetchBooks : Token -> Cmd Msg
+fetchBooks token =
+    Http.request
+        { body = Http.emptyBody
+        , expect = Http.expectJson FetchBooks booksDecoder
+        , headers = [ Http.header "Authorization" token ]
+        , method = "GET"
+        , timeout = Nothing
+        , tracker = Nothing
+        , url = "https://docs.jholmestech.com/books/"
+        }
