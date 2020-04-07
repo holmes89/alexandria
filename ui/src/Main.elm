@@ -85,7 +85,7 @@ initCurrentPage ( model, existingCmds ) =
                 Route.Book bookID ->
                     let
                         ( pageModel, pageCmds ) =
-                            ViewBook.init bookID model.navKey
+                            ViewBook.init bookID model.navKey model.session
                     in
                     ( ViewBookPage pageModel, Cmd.map ViewBookPageMsg pageCmds )
     in
@@ -138,8 +138,8 @@ notFoundView =
     h3 [] [ text "Oops! The page you requested was not found!" ]
 
 
-updateAuthenticated : Msg -> Model -> ( Model, Cmd Msg )
-updateAuthenticated msg model =
+updateAuthenticated : Msg -> Model -> Token -> ( Model, Cmd Msg )
+updateAuthenticated msg model token =
     case ( msg, model.page ) of
         ( ListBooksPageMsg subMsg, ListBooksPage pageModel ) ->
             let
@@ -233,7 +233,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model.session of
         Authenticated token ->
-            updateAuthenticated msg model
+            updateAuthenticated msg model token
 
         Unauthenticated ->
             updateUnauthenticated msg model

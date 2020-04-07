@@ -29,7 +29,7 @@ init session =
     ( { session = session
       , status = Loading
       }
-    , fetchBooks
+    , fetchBooks session
     )
 
 
@@ -39,6 +39,7 @@ init session =
 
 type Msg
     = FetchBooks (Result Http.Error (List Book))
+    | Error
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -51,6 +52,8 @@ update msg model =
 
                 Err _ ->
                     ( { model | status = Failure }, Cmd.none )
+        Error ->
+          ( { model | status = Failure }, Cmd.none )
 
 
 
@@ -120,9 +123,18 @@ viewBooks model =
 -- HTTP
 
 
-fetchBooks : Cmd Msg
-fetchBooks =
-    Http.get
-        { url = "https://docs.jholmestech.com/books/"
-        , expect = Http.expectJson FetchBooks booksDecoder
-        }
+fetchBooks : Session -> Cmd Msg
+fetchBooks session =
+  case session of
+    Authenticated token ->
+      Http.request
+          { body = Http.emptyBody
+          , expect = Http.expectJson FetchBooks booksDecoder
+          , headers = [ Http.header "Authorization" token ]
+          , method = "GET"
+          , timeout = Nothing
+          , tracker = Nothing
+          , url = "https://docs.jholmestech.com/books/"
+          }
+    Unauthenticated ->
+        Cmd.none

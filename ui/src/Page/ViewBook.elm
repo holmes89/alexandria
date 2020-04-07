@@ -5,11 +5,13 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
 import Http
+import Session exposing (..)
 
 
 type alias Model =
     { navKey : Nav.Key
     , status : Status
+    , session : Session
     }
 
 
@@ -19,15 +21,16 @@ type Status
     | Success Book
 
 
-init : BookID -> Nav.Key -> ( Model, Cmd Msg )
-init bookID navKey =
-    ( initialModel navKey, getBook bookID )
+init : BookID -> Nav.Key -> Session -> ( Model, Cmd Msg )
+init bookID navKey session =
+    ( initialModel navKey session, getBook bookID session )
 
 
-initialModel : Nav.Key -> Model
-initialModel navKey =
+initialModel : Nav.Key -> Session -> Model
+initialModel navKey session =
     { navKey = navKey
     , status = Loading
+    , session = session
     }
 
 
@@ -103,9 +106,18 @@ view model =
 -- HTTP
 
 
-getBook : BookID -> Cmd Msg
-getBook bookID =
-    Http.get
-        { url = "https://docs.jholmestech.com/documents/" ++ bookID
-        , expect = Http.expectJson FetchBook bookDecoder
-        }
+getBook : BookID -> Session -> Cmd Msg
+getBook bookID session =
+  case session of
+    Authenticated token ->
+      Http.request
+          { body = Http.emptyBody
+          , expect = Http.expectJson FetchBook bookDecoder
+          , headers = [ Http.header "Authorization" token ]
+          , method = "GET"
+          , timeout = Nothing
+          , tracker = Nothing
+          , url = "https://docs.jholmestech.com/documents/" ++ bookID
+          }
+    Unauthenticated ->
+        Cmd.none
