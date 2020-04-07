@@ -98,3 +98,13 @@ header.card-header > p.card-header-title {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.journal-draft-area {
+  padding: 10px 0px;
+  background-color: #363636;
+}
+
+
+.journal-draft-area  textarea{
+  resize: none;
+}
