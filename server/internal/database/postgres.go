@@ -3,6 +3,7 @@ package database
 import (
 	"alexandria/internal/common"
 	"alexandria/internal/documents"
+	"alexandria/internal/journal"
 	"alexandria/internal/user"
 	"context"
 	"database/sql"
@@ -81,7 +82,7 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch results")
-		return nil, errors.New( "unable to fetch results")
+		return nil, errors.New("unable to fetch results")
 	}
 	for rows.Next() {
 		doc := &documents.Document{}
@@ -166,11 +167,11 @@ func (r *PostgresDatabase) FindUserByUsername(ctx context.Context, username stri
 		RunWith(r.conn).
 		QueryRow().
 		Scan(&entity.ID, &entity.Username, &entity.Password); err != nil {
-			if err == sql.ErrNoRows {
-				return nil, nil
-			}
-			logrus.WithError(err).Error("could not find user")
-			return nil, errors.New("could not find user")
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		logrus.WithError(err).Error("could not find user")
+		return nil, errors.New("could not find user")
 	}
 	return &entity, nil
 }
@@ -191,6 +192,43 @@ func (r *PostgresDatabase) CreateUser(ctx context.Context, user *user.User) erro
 	return nil
 }
 
+func (r *PostgresDatabase) FindAllEntries() ([]journal.Entry, error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	rows, err := ps.Select("id", "content", "created").From("journal_entry").RunWith(r.conn).Query()
+	if err != nil {
+		logrus.WithError(err).Error("unable to find entries")
+		return nil, errors.New("unable to find entries")
+	}
+	var entries []journal.Entry
+	for rows.Next() {
+		var entry journal.Entry
+		if err := rows.Scan(&entry.ID, &entry.Content, &entry.Created); err != nil {
+			logrus.WithError(err).Warn("unable to scan entry")
+		}
+		entries = append(entries, entry)
+	}
+	rows.Close()
+	return entries, nil
+}
+
+func (r *PostgresDatabase) CreateEntry(entry journal.Entry) (journal.Entry, error) {
+	newEntry := journal.Entry{
+		Content: entry.Content,
+	}
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	if err := ps.Insert("journal_entry").
+		Columns("content").
+		Values(entry.Content).
+		Suffix("RETURNING id, created").
+		RunWith(r.conn).
+		QueryRow().
+		Scan(&newEntry.ID, &newEntry.Created); err != nil {
+		logrus.WithError(err).Error("unable to insert entry")
+		return newEntry, errors.New("unable to insert entry")
+	}
+	return newEntry, nil
+}
+
 func NewPostgresDocumentRepository(database *PostgresDatabase) documents.DocumentRepository {
 	return database
 }
@@ -199,3 +237,6 @@ func NewUserPostgresRepository(database *PostgresDatabase) user.Repository {
 	return database
 }
 
+func NewJournalRepository(database *PostgresDatabase) journal.Repository {
+	return database
+}

@@ -134,10 +134,10 @@ func (s *userService) Authenticate(ctx context.Context, username, password strin
 // getToken is an internal method used to generate JWT Token
 func (s *userService) getToken(user *User, expiration time.Time) (string, error) {
 
-	// Create the token
+	// CreateEntry the token
 	token := jwt.New(jwt.SigningMethodHS256)
 
-	// Create a map to store our claims
+	// CreateEntry a map to store our claims
 	claims := token.Claims.(jwt.MapClaims)
 
 	// Set token claims
