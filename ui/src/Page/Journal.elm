@@ -127,5 +127,5 @@ fetchEntries token =
         , method = "GET"
         , timeout = Nothing
         , tracker = Nothing
-        , url = "https://journal.jholmestech.com/entry"
+        , url = "https://docs.jholmestech.com/journal/entry/"
         }
