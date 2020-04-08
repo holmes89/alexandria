@@ -42,13 +42,14 @@ type Page
     | ViewBookPage ViewBook.Model
     | LoginPage Login.Model
     | HomePage
-    | JournalPage
+    | JournalPage Journal.Model
 
 
 type Msg
     = ListBooksPageMsg ListBooks.Msg
     | ViewBookPageMsg ViewBook.Msg
     | LoginPageMsg Login.Msg
+    | JournalPageMsg Journal.Msg
     | LinkClicked UrlRequest
     | UrlChanged Url
     | LoggedIn Msg
@@ -97,7 +98,11 @@ initCurrentPage ( model, existingCmds ) =
                     ( HomePage, Cmd.none )
 
                 ( Route.Journal, Authenticated token ) ->
-                    ( JournalPage, Cmd.none )
+                    let
+                        ( pageModel, pageCmds ) =
+                            Journal.init token
+                    in
+                    ( JournalPage pageModel, Cmd.map JournalPageMsg pageCmds )
 
                 ( Route.Home, Unauthenticated ) ->
                     ( HomePage, Nav.pushUrl model.navKey "/login" )
@@ -150,8 +155,8 @@ view model =
 
 navbar : Html Msg
 navbar =
-    div [ class "is-dark" ]
-        [ div [ class "tabs is-toggle is-centered" ]
+    div []
+        [ div [ class "tabs is-toggle is-centered transparent" ]
             [ ul []
                 (List.map
                     (\area ->
@@ -194,6 +199,10 @@ commonAreas =
     , { name = "Links"
       , endpoint = "/links"
       , icon = "fa-link"
+      }
+    , { name = "Talks"
+      , endpoint = "/talks"
+      , icon = "fa-video"
       }
     , { name = "Tags"
       , endpoint = "/tags"
@@ -238,8 +247,9 @@ currentView model =
         HomePage ->
             Home.view
 
-        JournalPage ->
-            Journal.view
+        JournalPage pageModel ->
+            Journal.view pageModel
+                |> Html.map JournalPageMsg
 
         UnauthorizedPage ->
             unauthorizedView
@@ -286,6 +296,15 @@ update msg model =
             in
             ( { model | page = ViewBookPage updatedPageModel }
             , Cmd.map ViewBookPageMsg updatedCmd
+            )
+
+        ( JournalPageMsg subMsg, JournalPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    Journal.update subMsg pageModel
+            in
+            ( { model | page = JournalPage updatedPageModel }
+            , Cmd.map JournalPageMsg updatedCmd
             )
 
         ( LoginPageMsg subMsg, LoginPage pageModel ) ->
