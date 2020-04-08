@@ -1,6 +1,7 @@
-package main
+package documents
 
 import (
+	"alexandria/internal/common"
 	"context"
 	"crypto/tls"
 	"github.com/go-resty/resty/v2"
@@ -48,20 +49,12 @@ type DocumentRepository interface {
 	UpsertStream(ctx context.Context, input <-chan *Document) error
 }
 
-func NewPostgresDocumentRepository(database *PostgresDatabase) DocumentRepository {
-	return database
-}
-
-func NewFirestoreDocumentRepository(database *DocumentsFirestoreDatabase) DocumentRepository {
-	return database
-}
-
 type documentService struct {
-	storage DocumentStorage
+	storage common.DocumentStorage
 	repo    DocumentRepository
 }
 
-func NewDocumentService(storage DocumentStorage, repo DocumentRepository) DocumentService {
+func NewDocumentService(storage common.DocumentStorage, repo DocumentRepository) DocumentService {
 	return &documentService{
 		storage: storage,
 		repo:    repo,
@@ -71,7 +64,7 @@ func NewDocumentService(storage DocumentStorage, repo DocumentRepository) Docume
 func (s *documentService) GetAll(ctx context.Context, filter map[string]interface{}) ([]*Document, error) {
 	entities, err := s.repo.FindAll(ctx, filter)
 	if err != nil {
-		logrus.WithError(err).Error("unable to fetch docs from repository")
+		logrus.WithError(err).Error("unable to fetch documents from repository")
 		return nil, errors.Wrap(err, "unable to fetch from repository")
 	}
 	return entities, nil
@@ -119,7 +112,7 @@ func (s *documentService) Add(ctx context.Context, file multipart.File, doc *Doc
 }
 
 func (s *documentService) CreateCover(id, path string) {
-	url := getEnv("COVER_ENDPOINT", "")
+	url := common.GetEnv("COVER_ENDPOINT", "")
 	if url == "" {
 		logrus.Panic("cover endpoint not set")
 	}

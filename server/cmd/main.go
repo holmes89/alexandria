@@ -1,6 +1,10 @@
 package main
 
 import (
+	"alexandria/internal/common"
+	"alexandria/internal/database"
+	"alexandria/internal/documents"
+	"alexandria/internal/user"
 	"context"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -16,40 +20,33 @@ func main() {
 
 func NewApp() *fx.App {
 
-	config := LoadConfig()
+	config := common.LoadConfig()
 
 	return fx.New(
 		fx.Provide(
 			config.LoadBucketConfig,
 			config.LoadPostgresDatabaseConfig,
-			NewGCPBucketStorage,
-			NewBucketDocumentStorage,
-			NewDocumentService,
-			NewBookService,
-			NewPaperService,
-			NewDocumentsFirestoreDatabase,
-			NewPostgresDatabase,
-			NewPostgresDocumentRepository,
-			NewUserPostgresRepository,
-			NewUserService,
+			common.NewGCPBucketStorage,
+			common.NewBucketDocumentStorage,
+			documents.NewDocumentService,
+			documents.NewBookService,
+			documents.NewPaperService,
+			database.NewPostgresDatabase,
+			database.NewPostgresDocumentRepository,
+			database.NewUserPostgresRepository,
+			user.NewUserService,
 			NewMux,
 		),
-		fx.Invoke(MakeDocumentHandler,
-			MakeBookHandler,
-			MakeLoginHandler,
-			MakePaperHandler),
+		fx.Invoke(documents.MakeDocumentHandler,
+			documents.MakeBookHandler,
+			user.MakeLoginHandler,
+			documents.MakePaperHandler),
 		fx.Logger(NewLogger()),
 	)
 }
 func NewMux(lc fx.Lifecycle) *mux.Router {
 	logrus.Info("creating mux")
 
-	//secureMiddleware := secure.New(secure.Options{
-	//	AllowedHosts:          []string{"localhost:8080"},
-	//	AllowedHostsAreRegex:  true,
-	//	SSLRedirect:           false,
-	//	STSSeconds:            31536000,
-	//})
 	router := mux.NewRouter()
 
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
@@ -63,14 +60,6 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			logrus.Info("starting server")
-			//router.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
-			//	t, err := route.GetPathTemplate()
-			//	if err != nil {
-			//		return err
-			//	}
-			//	logrus.Info(t)
-			//	return nil
-			//})
 			go http.ListenAndServe(":8080", handler)
 			return nil
 		},

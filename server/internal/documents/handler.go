@@ -1,12 +1,9 @@
-package main
+package documents
 
 import (
-	"context"
-	"encoding/json"
+	"alexandria/internal/common"
 	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
 	"net/http"
-	"strings"
 )
 
 func MakeDocumentHandler(mr *mux.Router, service DocumentService) http.Handler {
@@ -69,18 +66,18 @@ func (h *documentHandler) FindByID(w http.ResponseWriter, r *http.Request) {
 	id, ok := vars["id"]
 
 	if !ok {
-		makeError(w, http.StatusBadRequest, "document", "Missing Id", "findbyid")
+		common.MakeError(w, http.StatusBadRequest, "document", "Missing Id", "findbyid")
 		return
 	}
 
 	entity, err := h.service.GetByID(ctx, id)
 
 	if err != nil {
-		makeError(w, http.StatusInternalServerError, "document", "Server Error", "findbyid")
+		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "findbyid")
 		return
 	}
 
-	encodeResponse(r.Context(), w, entity)
+	common.EncodeResponse(r.Context(), w, entity)
 }
 
 func (h *documentHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -90,16 +87,16 @@ func (h *documentHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, ok := vars["id"]
 
 	if !ok {
-		makeError(w, http.StatusBadRequest, "document", "Missing Id", "delete")
+		common.MakeError(w, http.StatusBadRequest, "document", "Missing Id", "delete")
 		return
 	}
 
 	if err := h.service.Delete(ctx, id); err != nil {
-		makeError(w, http.StatusInternalServerError, "document", "Server Error", "delete")
+		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "delete")
 		return
 	}
 
-	encodeResponse(r.Context(), w, map[string]string{"status": "success"})
+	common.EncodeResponse(r.Context(), w, map[string]string{"status": "success"})
 }
 
 func (h *documentHandler) FindAll(w http.ResponseWriter, r *http.Request) {
@@ -108,11 +105,11 @@ func (h *documentHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	entity, err := h.service.GetAll(ctx, nil)
 
 	if err != nil {
-		makeError(w, http.StatusInternalServerError, "document", "Server Error", "findall")
+		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "findall")
 		return
 	}
 
-	encodeResponse(r.Context(), w, entity)
+	common.EncodeResponse(r.Context(), w, entity)
 }
 
 func (h *documentHandler) Scan(w http.ResponseWriter, r *http.Request) {
@@ -121,11 +118,11 @@ func (h *documentHandler) Scan(w http.ResponseWriter, r *http.Request) {
 	err := h.service.Scan(ctx)
 
 	if err != nil {
-		makeError(w, http.StatusInternalServerError, "document", "Server Error", "scan")
+		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "scan")
 		return
 	}
 
-	encodeResponse(r.Context(), w, map[string]string{"status": "success"})
+	common.EncodeResponse(r.Context(), w, map[string]string{"status": "success"})
 }
 
 func (h *bookHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -133,18 +130,18 @@ func (h *bookHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		makeError(w, http.StatusBadRequest, "book", "Unable to parse form", "create")
+		common.MakeError(w, http.StatusBadRequest, "book", "Unable to parse form", "create")
 		return
 	}
 	if file == nil {
-		makeError(w, http.StatusBadRequest, "book", "File missing from form", "create")
+		common.MakeError(w, http.StatusBadRequest, "book", "File missing from form", "create")
 		return
 	}
 	defer file.Close()
 
 	displayName, ok := r.MultipartForm.Value["name"]
 	if !ok {
-		makeError(w, http.StatusBadRequest, "book", "Name missing from form", "create")
+		common.MakeError(w, http.StatusBadRequest, "book", "Name missing from form", "create")
 		return
 	}
 
@@ -155,12 +152,12 @@ func (h *bookHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.Add(ctx, file, book); err != nil {
-		makeError(w, http.StatusInternalServerError, "book", err.Error(), "add")
+		common.MakeError(w, http.StatusInternalServerError, "book", err.Error(), "add")
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	encodeResponse(r.Context(), w, book)
+	common.EncodeResponse(r.Context(), w, book)
 }
 
 func (h *bookHandler) FindAll(w http.ResponseWriter, r *http.Request) {
@@ -169,11 +166,11 @@ func (h *bookHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	entity, err := h.service.GetAll(ctx)
 
 	if err != nil {
-		makeError(w, http.StatusInternalServerError, "book", "Server Error", "findall")
+		common.MakeError(w, http.StatusInternalServerError, "book", "Server Error", "findall")
 		return
 	}
 
-	encodeResponse(r.Context(), w, entity)
+	common.EncodeResponse(r.Context(), w, entity)
 }
 
 func (h *paperHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -181,18 +178,18 @@ func (h *paperHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
-		makeError(w, http.StatusBadRequest, "paper", "Unable to parse form", "create")
+		common.MakeError(w, http.StatusBadRequest, "paper", "Unable to parse form", "create")
 		return
 	}
 	if file == nil {
-		makeError(w, http.StatusBadRequest, "paper", "File missing from form", "create")
+		common.MakeError(w, http.StatusBadRequest, "paper", "File missing from form", "create")
 		return
 	}
 	defer file.Close()
 
 	displayName, ok := r.MultipartForm.Value["name"]
 	if !ok {
-		makeError(w, http.StatusBadRequest, "paper", "Name missing from form", "create")
+		common.MakeError(w, http.StatusBadRequest, "paper", "Name missing from form", "create")
 		return
 	}
 
@@ -203,12 +200,12 @@ func (h *paperHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.Add(ctx, file, book); err != nil {
-		makeError(w, http.StatusInternalServerError, "book", err.Error(), "add")
+		common.MakeError(w, http.StatusInternalServerError, "book", err.Error(), "add")
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	encodeResponse(r.Context(), w, book)
+	common.EncodeResponse(r.Context(), w, book)
 }
 
 func (h *paperHandler) FindAll(w http.ResponseWriter, r *http.Request) {
@@ -217,60 +214,9 @@ func (h *paperHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	entity, err := h.service.GetAll(ctx)
 
 	if err != nil {
-		makeError(w, http.StatusInternalServerError, "paper", "Server Error", "findall")
+		common.MakeError(w, http.StatusInternalServerError, "paper", "Server Error", "findall")
 		return
 	}
 
-	encodeResponse(r.Context(), w, entity)
-}
-
-type loginHandler struct {
-	service UserService
-}
-
-func MakeLoginHandler(mr *mux.Router, service UserService) http.Handler {
-	h := &loginHandler{
-		service: service,
-	}
-	mr.HandleFunc("/auth/", h.Login).Methods("GET")
-
-	return mr
-}
-
-func (h *loginHandler) Login(w http.ResponseWriter, r *http.Request) {
-	logrus.Info("here")
-	ctx := r.Context()
-
-	username, password, ok := r.BasicAuth()
-	if !ok {
-		logrus.Warn("missing auth header")
-		makeError(w, http.StatusUnauthorized, "login", "missing auth header", "login")
-		return
-	}
-
-	token, err := h.service.Authenticate(ctx, username, password)
-	if err != nil {
-		logrus.WithError(err).Error("failed to login")
-		makeError(w, http.StatusUnauthorized, "login", "invalid login", "login")
-		return
-	}
-
-	encodeResponse(r.Context(), w, token)
-}
-
-func makeError(w http.ResponseWriter, code int, domain string, message string, method string) {
-	logrus.WithFields(
-		logrus.Fields{
-			"type":   code,
-			"domain": domain,
-			"method": method,
-		}).Error(strings.ToLower(message))
-	http.Error(w, message, code)
-}
-
-func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	enc := json.NewEncoder(w)
-	enc.SetEscapeHTML(false)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return enc.Encode(response)
+	common.EncodeResponse(r.Context(), w, entity)
 }

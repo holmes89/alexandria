@@ -1,4 +1,4 @@
-package main
+package user
 
 import (
 	"context"
@@ -31,28 +31,20 @@ type Token struct {
 	Expires     time.Time `json:"expires"`
 }
 
-type UserService interface {
+type Service interface {
 	Authenticate(ctx context.Context, username, password string) (*Token, error)
 }
 
-type UserRepository interface {
+type Repository interface {
 	FindUserByUsername(ctx context.Context, username string) (*User, error)
 	CreateUser(ctx context.Context, user *User) error
 }
 
-func NewUserFirestoreRepository(database *UserFirestoreDatabase) UserRepository {
-	return database
-}
-
-func NewUserPostgresRepository(database *PostgresDatabase) UserRepository {
-	return database
-}
-
 type userService struct {
-	repo UserRepository
+	repo Repository
 }
 
-func NewUserService(repo UserRepository) UserService {
+func NewUserService(repo Repository) Service {
 	if key == "" {
 		logrus.Fatal("jwt not set")
 	}

@@ -1,6 +1,9 @@
-package main
+package database
 
 import (
+	"alexandria/internal/common"
+	"alexandria/internal/documents"
+	"alexandria/internal/user"
 	"context"
 	"database/sql"
 	"errors"
@@ -19,7 +22,7 @@ type PostgresDatabase struct {
 	conn *sql.DB
 }
 
-func NewPostgresDatabase(config PostgresDatabaseConfig) *PostgresDatabase {
+func NewPostgresDatabase(config common.PostgresDatabaseConfig) *PostgresDatabase {
 	logrus.Info("connecting to postgres")
 	db, err := retryPostgres(3, 10*time.Second, func() (db *sql.DB, e error) {
 		return sql.Open("postgres", config.ConnectionString)
@@ -34,7 +37,7 @@ func NewPostgresDatabase(config PostgresDatabaseConfig) *PostgresDatabase {
 	return psqldb
 }
 
-func migrateDB(config PostgresDatabaseConfig) {
+func migrateDB(config common.PostgresDatabaseConfig) {
 	db, err := sql.Open("postgres", config.ConnectionString)
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to connect to postgres to migrate")
@@ -70,8 +73,8 @@ func retryPostgres(attempts int, sleep time.Duration, callback func() (*sql.DB, 
 	return nil, fmt.Errorf("after %d attempts, connection failed", attempts)
 }
 
-func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*Document, err error) {
-	docs = []*Document{}
+func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*documents.Document, err error) {
+	docs = []*documents.Document{}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	rows, err := ps.Select("id", "description", "displayName", "name", "type", "path", "created", "updated").
 		From("documents").Where(filter).RunWith(r.conn).Query()
@@ -81,7 +84,7 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 		return nil, errors.New( "unable to fetch results")
 	}
 	for rows.Next() {
-		doc := &Document{}
+		doc := &documents.Document{}
 		if err := rows.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
 			logrus.WithError(err).Warn("unable to scan doc results")
 		}
@@ -90,11 +93,11 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 	return docs, nil
 }
 
-func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*Document, error) {
+func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.Document, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	row := ps.Select("id", "description", "displayName", "name", "type", "path", "created", "updated").
 		From("documents").Where(sq.Eq{"id": id}).RunWith(r.conn).QueryRow()
-	doc := &Document{}
+	doc := &documents.Document{}
 	if err := row.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
 		logrus.WithError(err).Warn("unable to scan doc results")
 	}
@@ -114,7 +117,7 @@ func (r *PostgresDatabase) existsByPath(ctx context.Context, path string) (bool,
 	return count > 0, nil
 }
 
-func (r *PostgresDatabase) Insert(ctx context.Context, doc *Document) error {
+func (r *PostgresDatabase) Insert(ctx context.Context, doc *documents.Document) error {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	if _, err := ps.Insert("documents").Columns("id", "description", "displayName", "name", "type", "path").
 		Values(doc.ID, doc.Description, doc.DisplayName, doc.Name, doc.Type, doc.Path).
@@ -126,7 +129,7 @@ func (r *PostgresDatabase) Insert(ctx context.Context, doc *Document) error {
 	return nil
 }
 
-func (r *PostgresDatabase) UpsertStream(ctx context.Context, input <-chan *Document) error {
+func (r *PostgresDatabase) UpsertStream(ctx context.Context, input <-chan *documents.Document) error {
 	count := 0
 	for doc := range input {
 		bctx := context.Background()
@@ -153,10 +156,10 @@ func (r *PostgresDatabase) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *PostgresDatabase) FindUserByUsername(ctx context.Context, username string) (*User, error) {
+func (r *PostgresDatabase) FindUserByUsername(ctx context.Context, username string) (*user.User, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	var entity User
+	var entity user.User
 	if err := ps.Select("id", "username", "password").
 		From("users").
 		Where(sq.Eq{"username": username}).
@@ -172,7 +175,7 @@ func (r *PostgresDatabase) FindUserByUsername(ctx context.Context, username stri
 	return &entity, nil
 }
 
-func (r *PostgresDatabase) CreateUser(ctx context.Context, user *User) error {
+func (r *PostgresDatabase) CreateUser(ctx context.Context, user *user.User) error {
 	if user.ID == "" {
 		user.ID = uuid.New().String()
 	}
@@ -187,3 +190,12 @@ func (r *PostgresDatabase) CreateUser(ctx context.Context, user *User) error {
 	}
 	return nil
 }
+
+func NewPostgresDocumentRepository(database *PostgresDatabase) documents.DocumentRepository {
+	return database
+}
+
+func NewUserPostgresRepository(database *PostgresDatabase) user.Repository {
+	return database
+}
+

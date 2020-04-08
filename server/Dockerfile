@@ -1,6 +1,8 @@
 FROM golang:1.13-alpine AS build-env
 WORKDIR "/alexandria"
-ADD  server/*.go server/*.mod server/*.sum ./
+ADD server/*.mod server/*.sum ./
+ADD server/cmd ./cmd
+ADD server/internal ./internal
 ADD server/migrations ./migrations
 RUN apk update \
     && apk upgrade \
@@ -9,7 +11,7 @@ RUN apk update \
 RUN go get ./...
 ENV PORT 8080
 EXPOSE 8080
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -X main.docker=true" -o server .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -X main.docker=true" -o server cmd/*.go
 
 FROM scratch AS prod
 ENV PORT 8080
