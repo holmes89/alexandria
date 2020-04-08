@@ -135,7 +135,11 @@ viewEntry entry =
             ]
         , div [ class "column" ]
             [ article [ class "message is-dark", id entry.id ]
-                [ div [ class "message-body" ] [ text entry.content ]
+                [ div [ class "message-body" ]
+                    (List.map
+                        (\l -> div [ class "journal-entry-margin-top" ] [ text l ])
+                        (String.lines entry.content)
+                    )
                 ]
             ]
         ]

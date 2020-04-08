@@ -117,3 +117,7 @@ header.card-header > p.card-header-title {
   overflow-x: hidden;
   overflow-y: auto;
 }
+
+.journal-entry-margin-top:not(:first-child) {
+  margin-top: 10px
+}
