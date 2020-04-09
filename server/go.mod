@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/firestore v1.1.1
 	firebase.google.com/go v3.12.0+incompatible
 	github.com/Masterminds/squirrel v1.2.0
+	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/auth0/go-jwt-middleware v0.0.0-20190805220309-36081240882b
 	github.com/aws/aws-sdk-go v1.26.4 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

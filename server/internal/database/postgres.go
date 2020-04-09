@@ -4,6 +4,7 @@ import (
 	"alexandria/internal/common"
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
+	"alexandria/internal/links"
 	"alexandria/internal/user"
 	"context"
 	"database/sql"
@@ -223,6 +224,47 @@ func (r *PostgresDatabase) CreateEntry(entry journal.Entry) (journal.Entry, erro
 		RunWith(r.conn).
 		QueryRow().
 		Scan(&newEntry.ID, &newEntry.Created); err != nil {
+
+		logrus.WithError(err).Error("unable to insert entry")
+		return newEntry, errors.New("unable to insert entry")
+	}
+	return newEntry, nil
+}
+
+func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	rows, err := ps.Select("id", "link", "display_name", "icon_path", "created").From("links").RunWith(r.conn).Query()
+	if err != nil {
+		logrus.WithError(err).Error("unable to find entries")
+		return nil, errors.New("unable to find entries")
+	}
+	var entries []links.Link
+	for rows.Next() {
+		var entry links.Link
+		if err := rows.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &entry.Created); err != nil {
+			logrus.WithError(err).Warn("unable to scan entry")
+		}
+		entries = append(entries, entry)
+	}
+	rows.Close()
+	return entries, nil
+}
+
+func (r *PostgresDatabase) CreateLink(entry links.Link) (links.Link, error) {
+	newEntry := links.Link{
+		Link:        entry.Link,
+		DisplayName: entry.DisplayName,
+		IconPath:    entry.IconPath,
+	}
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	if err := ps.Insert("links").
+		Columns("link", "display_name", "icon_path").
+		Values(entry.Link, entry.DisplayName, entry.IconPath).
+		Suffix("RETURNING id, created").
+		RunWith(r.conn).
+		QueryRow().
+		Scan(&newEntry.ID, &newEntry.Created); err != nil {
+
 		logrus.WithError(err).Error("unable to insert entry")
 		return newEntry, errors.New("unable to insert entry")
 	}
@@ -238,5 +280,9 @@ func NewUserPostgresRepository(database *PostgresDatabase) user.Repository {
 }
 
 func NewJournalRepository(database *PostgresDatabase) journal.Repository {
+	return database
+}
+
+func NewLinksRepository(database *PostgresDatabase) links.Repository {
 	return database
 }

@@ -32,17 +32,17 @@ services:
   #    DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind?sslmode=disable"
   #  ports:
   #    - 8000:8000
-  links-api:
-    restart: always
-    image: holmes89/links-api
-    build:
-     context: .
-     dockerfile: links/Dockerfile
-     target: prod
-    environment:
-      DATABASE_URL: "jdbc:postgresql://db/mind?user=postgres&password=${DB_PASSWORD}&sslmode=disable"
-    ports:
-      - 3000:3000
+  # links-api:
+  #   restart: always
+  #   image: holmes89/links-api
+  #   build:
+  #    context: .
+  #    dockerfile: links/Dockerfile
+  #    target: prod
+  #   environment:
+  #     DATABASE_URL: "jdbc:postgresql://db/mind?user=postgres&password=${DB_PASSWORD}&sslmode=disable"
+  #   ports:
+  #     - 3000:3000
   db:
     image: postgres
     restart: always

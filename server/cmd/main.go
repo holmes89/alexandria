@@ -5,6 +5,7 @@ import (
 	"alexandria/internal/database"
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
+	"alexandria/internal/links"
 	"alexandria/internal/user"
 	"context"
 	"github.com/gorilla/handlers"
@@ -32,10 +33,12 @@ func NewApp() *fx.App {
 			documents.NewDocumentService,
 			documents.NewBookService,
 			documents.NewPaperService,
+			links.NewService,
 			database.NewPostgresDatabase,
 			database.NewPostgresDocumentRepository,
 			database.NewUserPostgresRepository,
 			database.NewJournalRepository,
+			database.NewLinksRepository,
 			user.NewUserService,
 			NewMux,
 		),
@@ -44,6 +47,7 @@ func NewApp() *fx.App {
 			user.MakeLoginHandler,
 			documents.MakePaperHandler,
 			journal.MakeJournalHandler,
+			links.MakeLinksHandler,
 		),
 		fx.Logger(NewLogger()),
 	)
