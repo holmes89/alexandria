@@ -233,7 +233,7 @@ func (r *PostgresDatabase) CreateEntry(entry journal.Entry) (journal.Entry, erro
 
 func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("id", "link", "display_name", "icon_path", "created").From("links").RunWith(r.conn).Query()
+	rows, err := ps.Select("id", "link", "display_name", "icon_path", "created").From("links").Suffix("ORDER BY created DESC").RunWith(r.conn).Query()
 	if err != nil {
 		logrus.WithError(err).Error("unable to find entries")
 		return nil, errors.New("unable to find entries")
