@@ -7,6 +7,7 @@ import Html.Attributes exposing (class, href, src, style)
 import Json.Decode as Decode exposing (Value)
 import Page.Home as Home
 import Page.Journal as Journal
+import Page.Links as Links
 import Page.ListBooks as ListBooks
 import Page.Login as Login
 import Page.ViewBook as ViewBook
@@ -43,6 +44,7 @@ type Page
     | LoginPage Login.Model
     | HomePage
     | JournalPage Journal.Model
+    | LinksPage Links.Model
 
 
 type Msg
@@ -50,6 +52,7 @@ type Msg
     | ViewBookPageMsg ViewBook.Msg
     | LoginPageMsg Login.Msg
     | JournalPageMsg Journal.Msg
+    | LinksPageMsg Links.Msg
     | LinkClicked UrlRequest
     | UrlChanged Url
     | LoggedIn Msg
@@ -103,6 +106,13 @@ initCurrentPage ( model, existingCmds ) =
                             Journal.init token
                     in
                     ( JournalPage pageModel, Cmd.map JournalPageMsg pageCmds )
+
+                ( Route.Links, Authenticated token ) ->
+                    let
+                        ( pageModel, pageCmds ) =
+                            Links.init token
+                    in
+                    ( LinksPage pageModel, Cmd.map LinksPageMsg pageCmds )
 
                 ( Route.Home, Unauthenticated ) ->
                     ( HomePage, Nav.pushUrl model.navKey "/login" )
@@ -251,6 +261,10 @@ currentView model =
             Journal.view pageModel
                 |> Html.map JournalPageMsg
 
+        LinksPage pageModel ->
+            Links.view pageModel
+                |> Html.map LinksPageMsg
+
         UnauthorizedPage ->
             unauthorizedView
 
@@ -305,6 +319,15 @@ update msg model =
             in
             ( { model | page = JournalPage updatedPageModel }
             , Cmd.map JournalPageMsg updatedCmd
+            )
+
+        ( LinksPageMsg subMsg, LinksPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    Links.update subMsg pageModel
+            in
+            ( { model | page = LinksPage updatedPageModel }
+            , Cmd.map LinksPageMsg updatedCmd
             )
 
         ( LoginPageMsg subMsg, LoginPage pageModel ) ->

@@ -121,3 +121,7 @@ header.card-header > p.card-header-title {
 .journal-entry-margin-top:not(:first-child) {
   margin-top: 10px
 }
+
+.link h2, .link h4, .link h6 {
+  font-family: 'Merriweather', sans-serif;
+}

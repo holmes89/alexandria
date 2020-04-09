@@ -200,7 +200,7 @@ func (r *PostgresDatabase) FindAllEntries() ([]journal.Entry, error) {
 		logrus.WithError(err).Error("unable to find entries")
 		return nil, errors.New("unable to find entries")
 	}
-	var entries []journal.Entry
+	entries := []journal.Entry{}
 	for rows.Next() {
 		var entry journal.Entry
 		if err := rows.Scan(&entry.ID, &entry.Content, &entry.Created); err != nil {
@@ -238,7 +238,7 @@ func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 		logrus.WithError(err).Error("unable to find entries")
 		return nil, errors.New("unable to find entries")
 	}
-	var entries []links.Link
+	entries := []links.Link{}
 	for rows.Next() {
 		var entry links.Link
 		if err := rows.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &entry.Created); err != nil {
