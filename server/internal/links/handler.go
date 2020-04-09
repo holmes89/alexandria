@@ -51,7 +51,7 @@ func (h *linkHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	entity, err := h.service.Create(entity)
 	if err != nil {
-		common.MakeError(w, http.StatusBadRequest, "links", "Server error", "create")
+		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "create")
 		return
 	}
 

@@ -51,7 +51,7 @@ func (h *journalHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	entity, err := h.repo.CreateEntry(entity)
 	if err != nil {
-		common.MakeError(w, http.StatusBadRequest, "journal", "Server error", "create")
+		common.MakeError(w, http.StatusInternalServerError, "journal", "Server error", "create")
 		return
 	}
 

@@ -125,3 +125,7 @@ header.card-header > p.card-header-title {
 .link h2, .link h4, .link h6 {
   font-family: 'Merriweather', sans-serif;
 }
+
+.add-link {
+  width: 100%;
+}

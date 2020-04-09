@@ -67,7 +67,11 @@ func (s *service) Create(entity Link) (linkEntity Link, err error) {
 		logrus.Warn("unable to find apple-touch-icon looking for other icon")
 		icon, ok = doc.Find("link[rel='icon']").Attr("href")
 		if !ok {
-			icon = ""
+			logrus.Warn("unable to find icon looking for other icon")
+			icon, ok = doc.Find("link[rel='shortcut icon']").Attr("href")
+			if !ok {
+				icon = ""
+			}
 		}
 	}
 
@@ -81,7 +85,7 @@ func (s *service) Create(entity Link) (linkEntity Link, err error) {
 }
 
 func parseIcon(website, path string) string {
-	if path == "" || strings.Contains(path, "http") {
+	if path == "" || strings.Contains(path, "//") {
 		return path
 	}
 

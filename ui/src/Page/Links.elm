@@ -1,7 +1,7 @@
 module Page.Links exposing (Model, Msg, init, update, view)
 
 import Html exposing (..)
-import Html.Attributes exposing (class, href, id, rows, src, style, value)
+import Html.Attributes exposing (class, href, id, placeholder, rows, src, style, target, value)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Links exposing (Link, linkDecoder, linkEncoder, linksDecoder)
@@ -100,7 +100,7 @@ viewLink link =
                         ]
                     , div [ class "media-content" ]
                         [ div [ class "content link" ]
-                            [ a [ href link.link ] [ h4 [] [ text link.displayName ] ] ]
+                            [ a [ href link.link, target "_blank" ] [ h4 [] [ text link.displayName ] ] ]
                         ]
                     ]
                 ]
@@ -121,8 +121,22 @@ view model =
 
         ( Success, entries ) ->
             section [ class "section" ]
-                [ div [ class "container is-centered" ]
-                    [ div [ class "columns is-multiline" ]
+                [ div [ class "container" ]
+                    [ div [ class "columns is-centered" ]
+                        [ div [ class "column is-full" ]
+                            [ div [ class "field has-addons has-text-centered" ]
+                                [ div [ class "control has-icons-left  add-link" ]
+                                    [ input [ class "input", value model.content, placeholder "Link", onInput UpdateContent ] []
+                                    , span [ class "icon is-small is-left" ]
+                                        [ i [ class "fas fa-link" ] [] ]
+                                    ]
+                                , div [ class "control" ]
+                                    [ button [ class "button is-dark", onClick SendContent ] [ text "Submit" ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    , div [ class "columns is-multiline" ]
                         (List.map
                             viewLink
                             entries
