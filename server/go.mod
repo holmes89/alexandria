@@ -28,6 +28,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
 	golang.org/x/exp v0.0.0-20200319221330-857350248e3d // indirect
 	golang.org/x/net v0.0.0-20200319234117-63522dbf7eec // indirect
+	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/tools v0.0.0-20200319210407-521f4a0cd458 // indirect
 	google.golang.org/api v0.20.0
 	google.golang.org/genproto v0.0.0-20200319113533-08878b785e9c // indirect

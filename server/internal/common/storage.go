@@ -18,6 +18,10 @@ type DocumentSave interface {
 	Save(ctx context.Context, fileName string, reader io.Reader) (path string, err error)
 }
 
+type BackupSave interface {
+	Save(ctx context.Context, fileName string, reader io.Reader) (path string, err error)
+}
+
 type DocumentGet interface {
 	Get(ctx context.Context, path string) (string, error)
 	List(ctx context.Context) <-chan string
@@ -92,6 +96,10 @@ func NewGCPBucketStorage(config BucketConfig) *BucketStorage {
 }
 
 func NewBucketDocumentStorage(storage *BucketStorage) DocumentStorage {
+	return storage
+}
+
+func NewBackupStorage(storage *BucketStorage) BackupSave {
 	return storage
 }
 
