@@ -69,8 +69,8 @@ func NewMux(lc fx.Lifecycle) *mux.Router {
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"})
 	cors := handlers.CORS(originsOk, headersOk, methodsOk)
 
-	router.Use(cors)
-	handler := (cors)(router)
+	router.Use(cors, authenticate)
+	handler := (cors)((authenticate)(router))
 
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
@@ -104,7 +104,7 @@ func EndpointLogging(h http.Handler) http.Handler {
 	})
 }
 
-func Authenticate(next http.Handler) http.Handler {
+func authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// sample token string taken from the New example

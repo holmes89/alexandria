@@ -92,7 +92,6 @@ func (r *runner) backup() {
 }
 
 func (r *runner) start() {
-	go r.backup()                              // remove after testing
 	r.ticker = time.NewTicker(8 * time.Minute) // 15 minute cool down so we want to backup at least once
 	go func() {
 		for {
