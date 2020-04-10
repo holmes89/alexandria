@@ -107,6 +107,11 @@ func EndpointLogging(h http.Handler) http.Handler {
 func authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		// Exclude auth
+		if strings.Contains(r.URL.Path, "auth") && r.Method == "GET" {
+			next.ServeHTTP(w, r) // call original
+		}
+
 		// sample token string taken from the New example
 		tokenString := r.Header.Get("Authorization")
 		tokenString = strings.Replace(tokenString, "Bearer ", "", -1)
@@ -121,7 +126,7 @@ func authenticate(next http.Handler) http.Handler {
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+				return nil, fmt.Errorf("ynexpected signing method: %v", token.Header["alg"])
 			}
 
 			// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
