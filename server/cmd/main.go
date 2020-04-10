@@ -35,6 +35,7 @@ func NewApp() *fx.App {
 			config.LoadPostgresDatabaseConfig,
 			common.NewGCPBucketStorage,
 			common.NewBucketDocumentStorage,
+			common.NewBackupStorage,
 			documents.NewDocumentService,
 			documents.NewBookService,
 			documents.NewPaperService,
