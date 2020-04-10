@@ -160,7 +160,41 @@ formatTime time =
         zone =
             america__new_york ()
     in
-    String.fromInt (toHour zone time) ++ ":" ++ String.fromInt (toMinute zone time)
+    String.fromInt (toHour zone time) ++ ":" ++ minuteToString (toMinute zone time)
+
+
+minuteToString : Int -> String
+minuteToString minute =
+    case minute of
+        1 ->
+            "01"
+
+        2 ->
+            "02"
+
+        3 ->
+            "03"
+
+        4 ->
+            "04"
+
+        5 ->
+            "05"
+
+        6 ->
+            "06"
+
+        7 ->
+            "07"
+
+        8 ->
+            "08"
+
+        9 ->
+            "09"
+
+        _ ->
+            String.fromInt minute
 
 
 monthToString : Month -> String
