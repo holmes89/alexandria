@@ -1,6 +1,7 @@
 package links
 
 import (
+	"alexandria/internal/tags"
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
@@ -19,15 +20,19 @@ type Repository interface {
 type Service interface {
 	FindAll() ([]Link, error)
 	Create(Link) (Link, error)
+	AddTag(id string, tag string) error
+	RemoveTag(id string, tag string) error
 }
 
 type service struct {
 	repo Repository
+	tagsRepo tags.Repository
 }
 
-func NewService(repo Repository) Service {
+func NewService(repo Repository, tagsRepo tags.Repository) Service {
 	return &service{
 		repo: repo,
+		tagsRepo: tagsRepo,
 	}
 }
 
@@ -82,6 +87,14 @@ func (s *service) Create(entity Link) (linkEntity Link, err error) {
 	}
 
 	return s.repo.CreateLink(linkEntity)
+}
+
+func (s *service) AddTag(id string, tag string) error {
+	return s.tagsRepo.AddResourceTag(id, tags.LinksResource, tag)
+}
+
+func (s *service) RemoveTag(id string, tag string) error {
+	return s.tagsRepo.RemoveResourceTag(id, tag)
 }
 
 func parseIcon(website, path string) string {

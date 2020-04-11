@@ -5,6 +5,7 @@ import (
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
 	"alexandria/internal/links"
+	"alexandria/internal/tags"
 	"alexandria/internal/user"
 	"context"
 	"database/sql"
@@ -15,6 +16,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
+	"github.com/iancoleman/strcase"
 	_ "github.com/lib/pq" // Used for specifying the type client we are creating
 	"github.com/sirupsen/logrus"
 	"time"
@@ -235,14 +237,14 @@ func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	rows, err := ps.Select("id", "link", "display_name", "icon_path", "created").From("links").Suffix("ORDER BY created DESC").RunWith(r.conn).Query()
 	if err != nil {
-		logrus.WithError(err).Error("unable to find entries")
-		return nil, errors.New("unable to find entries")
+		logrus.WithError(err).Error("unable to find links")
+		return nil, errors.New("unable to find links")
 	}
 	entries := []links.Link{}
 	for rows.Next() {
 		var entry links.Link
 		if err := rows.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &entry.Created); err != nil {
-			logrus.WithError(err).Warn("unable to scan entry")
+			logrus.WithError(err).Warn("unable to scan link")
 		}
 		entries = append(entries, entry)
 	}
@@ -265,10 +267,71 @@ func (r *PostgresDatabase) CreateLink(entry links.Link) (links.Link, error) {
 		QueryRow().
 		Scan(&newEntry.ID, &newEntry.Created); err != nil {
 
-		logrus.WithError(err).Error("unable to insert entry")
-		return newEntry, errors.New("unable to insert entry")
+		logrus.WithError(err).Error("unable to insert link")
+		return newEntry, errors.New("unable to insert link")
 	}
 	return newEntry, nil
+}
+
+
+func (r *PostgresDatabase) FindAllTags() ([]tags.Tag, error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	rows, err := ps.Select("id","display_name").From("tags").RunWith(r.conn).Query()
+	if err != nil {
+		logrus.WithError(err).Error("unable to find tags")
+		return nil, errors.New("unable to find tags")
+	}
+	entries := []tags.Tag{}
+	for rows.Next() {
+		var entry tags.Tag
+		if err := rows.Scan(&entry.ID, &entry.DisplayName); err != nil {
+			logrus.WithError(err).Warn("unable to scan tags")
+		}
+		entries = append(entries, entry)
+	}
+	rows.Close()
+	return entries, nil
+}
+
+func (r *PostgresDatabase) CreateTag(entry tags.Tag) (tags.Tag, error) {
+	newEntry := tags.Tag{
+		DisplayName: strcase.ToKebab(entry.DisplayName),
+	}
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	if err := ps.Insert("links").
+		Columns("display_name").
+		Values(entry.DisplayName).
+		Suffix("ON CONFLICT DO NOTHING RETURNING id").
+		RunWith(r.conn).
+		QueryRow().
+		Scan(&newEntry.ID); err != nil {
+
+		logrus.WithError(err).Error("unable to insert tag")
+		return newEntry, errors.New("unable to insert tag")
+	}
+	return newEntry, nil
+}
+
+func (r *PostgresDatabase) AddResourceTag(resourceID string, resourceType tags.ResourceType, tagName string) error {
+	tagName = strcase.ToKebab(tagName)
+	if _, err := r.CreateTag(tags.Tag{DisplayName: tagName}); err != nil {
+		logrus.WithError(err).Error("unable to upsert tag")
+		return errors.New("unable to upsert tag")
+	}
+	if _, err := r.conn.Exec("INSERT INTO tagged_resources SELECT id, $1, $2  FROM tags where display_name = $3)", resourceID, resourceType, tagName); err != nil {
+		logrus.WithError(err).Error("unable to add tag")
+		return errors.New("unable to add tag")
+	}
+	return nil
+}
+
+func (r *PostgresDatabase) RemoveResourceTag(resourceID string, tagName string) error {
+	tagName = strcase.ToKebab(tagName)
+	if _, err := r.conn.Exec("DELETE FROM tagged_resources where resource_id = $1 and id = (SELECT id FROM tags where display_name = $2)", resourceID, tagName); err != nil {
+		logrus.WithError(err).Error("unable to remove tag")
+		return errors.New("unable to remove tag")
+	}
+	return nil
 }
 
 func NewPostgresDocumentRepository(database *PostgresDatabase) documents.DocumentRepository {
@@ -284,5 +347,9 @@ func NewJournalRepository(database *PostgresDatabase) journal.Repository {
 }
 
 func NewLinksRepository(database *PostgresDatabase) links.Repository {
+	return database
+}
+
+func NewTagsRepository(database *PostgresDatabase) tags.Repository {
 	return database
 }

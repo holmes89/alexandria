@@ -20,6 +20,8 @@ func MakeLinksHandler(mr *mux.Router, service Service) http.Handler {
 	}
 	r.HandleFunc("/", h.FindAll).Methods("GET")
 	r.HandleFunc("/", h.Create).Methods("POST")
+	r.HandleFunc("/{id}/tags/", h.AddTag).Methods("POST")
+	r.HandleFunc("/{id}/tags/", h.RemoveTag).Methods("DELETE")
 
 	return r
 }
@@ -56,4 +58,56 @@ func (h *linkHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.EncodeResponse(ctx, w, entity)
+}
+
+func (h *linkHandler) AddTag(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	req := tagRequest{}
+	if err := json.Unmarshal(b, &req); err != nil {
+		logrus.WithError(err).Error("unable to unmarshal link tag")
+		common.MakeError(w, http.StatusBadRequest, "links", "Bad Request", "addTag")
+		return
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	if err := h.service.AddTag(id, req.Tag); err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "create")
+		return
+	}
+
+	common.EncodeResponse(ctx, w, "success")
+}
+
+func (h *linkHandler) RemoveTag(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	req := tagRequest{}
+	if err := json.Unmarshal(b, &req); err != nil {
+		logrus.WithError(err).Error("unable to unmarshal link tag")
+		common.MakeError(w, http.StatusBadRequest, "links", "Bad Request", "addTag")
+		return
+	}
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	if err := h.service.RemoveTag(id, req.Tag); err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "create")
+		return
+	}
+
+	common.EncodeResponse(ctx, w, "success")
+}
+
+type tagRequest struct {
+	Tag string `json"tag"`
 }

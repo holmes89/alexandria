@@ -1,0 +1,3 @@
+DELETE TABLE IF EXISTS tagged_resources;
+DELETE TABLE IF EXISTS tags;
+

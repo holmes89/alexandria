@@ -7,6 +7,7 @@ import (
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
 	"alexandria/internal/links"
+	"alexandria/internal/tags"
 	"alexandria/internal/user"
 	"context"
 	"fmt"
@@ -45,6 +46,7 @@ func NewApp() *fx.App {
 			database.NewUserPostgresRepository,
 			database.NewJournalRepository,
 			database.NewLinksRepository,
+			database.NewTagsRepository,
 			user.NewUserService,
 			NewMux,
 		),
@@ -54,6 +56,7 @@ func NewApp() *fx.App {
 			documents.MakePaperHandler,
 			journal.MakeJournalHandler,
 			links.MakeLinksHandler,
+			tags.MakeLinksHandler,
 			backup.NewBackupRunner,
 		),
 		fx.Logger(NewLogger()),
