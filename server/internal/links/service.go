@@ -14,24 +14,26 @@ import (
 
 type Repository interface {
 	FindAllLinks() ([]Link, error)
+	FindLinkByID(id string) (Link, error)
 	CreateLink(Link) (Link, error)
 }
 
 type Service interface {
 	FindAll() ([]Link, error)
+	FindByID(id string) (Link, error)
 	Create(Link) (Link, error)
 	AddTag(id string, tag string) error
 	RemoveTag(id string, tag string) error
 }
 
 type service struct {
-	repo Repository
+	repo     Repository
 	tagsRepo tags.Repository
 }
 
 func NewService(repo Repository, tagsRepo tags.Repository) Service {
 	return &service{
-		repo: repo,
+		repo:     repo,
 		tagsRepo: tagsRepo,
 	}
 }
@@ -88,7 +90,9 @@ func (s *service) Create(entity Link) (linkEntity Link, err error) {
 
 	return s.repo.CreateLink(linkEntity)
 }
-
+func (s *service) FindByID(id string) (Link, error) {
+	return s.repo.FindLinkByID(id)
+}
 func (s *service) AddTag(id string, tag string) error {
 	return s.tagsRepo.AddResourceTag(id, tags.LinksResource, tag)
 }

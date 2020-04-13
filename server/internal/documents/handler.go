@@ -2,7 +2,10 @@ package documents
 
 import (
 	"alexandria/internal/common"
+	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -14,6 +17,7 @@ func MakeDocumentHandler(mr *mux.Router, service DocumentService) http.Handler {
 	}
 
 	r.HandleFunc("/{id}", h.FindByID).Methods("GET")
+	r.HandleFunc("/{id}", h.UpdateFields).Methods("PATCH")
 	r.HandleFunc("/{id}", h.Delete).Methods("DELETE")
 	r.HandleFunc("/scan", h.Scan).Methods("PUT")
 	r.HandleFunc("/", h.FindAll).Methods("GET")
@@ -74,6 +78,38 @@ func (h *documentHandler) FindByID(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "findbyid")
+		return
+	}
+
+	common.EncodeResponse(r.Context(), w, entity)
+}
+
+func (h *documentHandler) UpdateFields(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	req := Document{}
+	if err := json.Unmarshal(b, &req); err != nil {
+		logrus.WithError(err).Error("unable to unmarshal link tag")
+		common.MakeError(w, http.StatusBadRequest, "document", "Bad Request", "updateFields")
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	id, ok := vars["id"]
+
+	if !ok {
+		common.MakeError(w, http.StatusBadRequest, "document", "Missing Id", "updateFields")
+		return
+	}
+
+	entity, err := h.service.UpdateFields(ctx, id, req)
+
+	if err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "updateFields")
 		return
 	}
 

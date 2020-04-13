@@ -39,6 +39,7 @@ type DocumentService interface {
 	Add(ctx context.Context, file multipart.File, document *Document) error
 	Delete(ctx context.Context, id string) error
 	Scan(ctx context.Context) error
+	UpdateFields(ctx context.Context, id string, docs Document) (Document, error)
 }
 
 type DocumentRepository interface {
@@ -46,6 +47,7 @@ type DocumentRepository interface {
 	FindByID(ctx context.Context, id string) (*Document, error)
 	Insert(ctx context.Context, document *Document) error
 	Delete(ctx context.Context, id string) error
+	UpdateDocument(ctx context.Context, document Document) (Document, error)
 	UpsertStream(ctx context.Context, input <-chan *Document) error
 }
 
@@ -183,6 +185,35 @@ func (s *documentService) Scan(ctx context.Context) error {
 		}
 	}()
 	return s.repo.UpsertStream(ctx, docStream)
+}
+
+func (s *documentService) UpdateFields(ctx context.Context, id string, updatedDoc Document) (doc Document, err error) {
+	entity, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		logrus.WithError(err).Error("unable to find entity")
+		return doc, errors.New("unable to find entity")
+	}
+
+	if entity == nil {
+		return doc, errors.New("entity does not exist")
+	}
+
+	if updatedDoc.Description != "" {
+		entity.Description = updatedDoc.Description
+	}
+	if updatedDoc.DisplayName != "" {
+		entity.DisplayName = updatedDoc.DisplayName
+	}
+	if updatedDoc.Type != "" {
+		if updatedDoc.Type == "book" || updatedDoc.Type == "paper" {
+			entity.Type = updatedDoc.Type
+		} else {
+			return doc, errors.New("unsupported type")
+		}
+	}
+
+	return s.repo.UpdateDocument(ctx, *entity)
+
 }
 
 func isSupported(file multipart.File) bool {

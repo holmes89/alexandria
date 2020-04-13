@@ -23,6 +23,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
+	github.com/spf13/cobra v1.0.0 // indirect
 	go.uber.org/fx v1.10.0
 	go.uber.org/multierr v1.5.0 // indirect
 	gocloud.dev v0.19.0

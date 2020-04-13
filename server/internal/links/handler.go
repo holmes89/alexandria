@@ -77,11 +77,17 @@ func (h *linkHandler) AddTag(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if err := h.service.AddTag(id, req.Tag); err != nil {
-		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "create")
+		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "addTag")
 		return
 	}
 
-	common.EncodeResponse(ctx, w, "success")
+	entity, err := h.service.FindByID(id)
+	if err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "addTag")
+		return
+	}
+
+	common.EncodeResponse(ctx, w, entity)
 }
 
 func (h *linkHandler) RemoveTag(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +99,7 @@ func (h *linkHandler) RemoveTag(w http.ResponseWriter, r *http.Request) {
 	req := tagRequest{}
 	if err := json.Unmarshal(b, &req); err != nil {
 		logrus.WithError(err).Error("unable to unmarshal link tag")
-		common.MakeError(w, http.StatusBadRequest, "links", "Bad Request", "addTag")
+		common.MakeError(w, http.StatusBadRequest, "links", "Bad Request", "removeTag")
 		return
 	}
 
@@ -101,11 +107,17 @@ func (h *linkHandler) RemoveTag(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	if err := h.service.RemoveTag(id, req.Tag); err != nil {
-		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "create")
+		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "removeTag")
 		return
 	}
 
-	common.EncodeResponse(ctx, w, "success")
+	entity, err := h.service.FindByID(id)
+	if err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "links", "Server error", "removeTag")
+		return
+	}
+
+	common.EncodeResponse(ctx, w, entity)
 }
 
 type tagRequest struct {

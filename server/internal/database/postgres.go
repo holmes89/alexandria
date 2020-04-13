@@ -19,6 +19,7 @@ import (
 	"github.com/iancoleman/strcase"
 	_ "github.com/lib/pq" // Used for specifying the type client we are creating
 	"github.com/sirupsen/logrus"
+	"strings"
 	"time"
 )
 
@@ -104,6 +105,24 @@ func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.
 	doc := &documents.Document{}
 	if err := row.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
 		logrus.WithError(err).Warn("unable to scan doc results")
+	}
+
+	return doc, nil
+}
+
+func (r *PostgresDatabase) UpdateDocument(_ context.Context, doc documents.Document) (result documents.Document, err error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	_, err = ps.Update("documents").SetMap(
+		map[string]interface{}{
+			"description": doc.Description,
+			"displayName": doc.DisplayName,
+			"type":        doc.Type,
+			"updated":     time.Now()}).
+		Where(sq.Eq{"id": doc.ID}).RunWith(r.conn).Exec()
+
+	if err != nil {
+		logrus.WithError(err).Error("unable to update doc")
+		return result, errors.New("unable to update doc")
 	}
 
 	return doc, nil
@@ -235,7 +254,9 @@ func (r *PostgresDatabase) CreateEntry(entry journal.Entry) (journal.Entry, erro
 
 func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("id", "link", "display_name", "icon_path", "created").From("links").Suffix("ORDER BY created DESC").RunWith(r.conn).Query()
+	rows, err := ps.Select("links.id", "link", "display_name", "icon_path", "string_agg(tagged_resources.id::character varying, ',')", "created").
+		From("links").
+		LeftJoin("tagged_resources ON links.id=tagged_resources.resource_id").Suffix("GROUP BY links.id ORDER BY created DESC").RunWith(r.conn).Query()
 	if err != nil {
 		logrus.WithError(err).Error("unable to find links")
 		return nil, errors.New("unable to find links")
@@ -243,13 +264,39 @@ func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 	entries := []links.Link{}
 	for rows.Next() {
 		var entry links.Link
-		if err := rows.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &entry.Created); err != nil {
+		var tagList string
+		entry.Tags = []string{}
+		if err := rows.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &tagList, &entry.Created); err != nil {
 			logrus.WithError(err).Warn("unable to scan link")
 		}
+		entryTags := strings.Split(tagList, ",")
+		entry.Tags = append(entry.Tags, entryTags...)
 		entries = append(entries, entry)
 	}
 	rows.Close()
 	return entries, nil
+}
+
+func (r *PostgresDatabase) FindLinkByID(id string) (entity links.Link, err error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	rowscanner := ps.Select("links.id", "link", "display_name", "icon_path", "string_agg(tagged_resources.id::character varying, ',')", "created").
+		From("links").
+		LeftJoin("tagged_resources ON links.id=tagged_resources.resource_id").
+		Where(sq.Eq{"links.id": id}).
+		Suffix("GROUP BY links.id ORDER BY created DESC").RunWith(r.conn).QueryRow()
+	if err != nil {
+		logrus.WithError(err).Error("unable to find links")
+		return entity, errors.New("unable to find links")
+	}
+	var entry links.Link
+	var tagList string
+	entry.Tags = []string{}
+	if err := rowscanner.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &tagList, &entry.Created); err != nil {
+		logrus.WithError(err).Warn("unable to scan link")
+	}
+	entryTags := strings.Split(tagList, ",")
+	entry.Tags = append(entry.Tags, entryTags...)
+	return entry, nil
 }
 
 func (r *PostgresDatabase) CreateLink(entry links.Link) (links.Link, error) {
@@ -273,10 +320,9 @@ func (r *PostgresDatabase) CreateLink(entry links.Link) (links.Link, error) {
 	return newEntry, nil
 }
 
-
 func (r *PostgresDatabase) FindAllTags() ([]tags.Tag, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("id","display_name").From("tags").RunWith(r.conn).Query()
+	rows, err := ps.Select("id", "display_name").From("tags").RunWith(r.conn).Query()
 	if err != nil {
 		logrus.WithError(err).Error("unable to find tags")
 		return nil, errors.New("unable to find tags")
@@ -296,11 +342,12 @@ func (r *PostgresDatabase) FindAllTags() ([]tags.Tag, error) {
 func (r *PostgresDatabase) CreateTag(entry tags.Tag) (tags.Tag, error) {
 	newEntry := tags.Tag{
 		DisplayName: strcase.ToKebab(entry.DisplayName),
+		TagColor:    tags.GetRandomColor(),
 	}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	if err := ps.Insert("links").
-		Columns("display_name").
-		Values(entry.DisplayName).
+	if err := ps.Insert("tags").
+		Columns("display_name", "color").
+		Values(entry.DisplayName, entry.TagColor).
 		Suffix("ON CONFLICT DO NOTHING RETURNING id").
 		RunWith(r.conn).
 		QueryRow().
@@ -318,7 +365,7 @@ func (r *PostgresDatabase) AddResourceTag(resourceID string, resourceType tags.R
 		logrus.WithError(err).Error("unable to upsert tag")
 		return errors.New("unable to upsert tag")
 	}
-	if _, err := r.conn.Exec("INSERT INTO tagged_resources SELECT id, $1, $2  FROM tags where display_name = $3)", resourceID, resourceType, tagName); err != nil {
+	if _, err := r.conn.Exec("INSERT INTO tagged_resources SELECT id, $1, $2  FROM tags where display_name = $3", resourceID, resourceType, tagName); err != nil {
 		logrus.WithError(err).Error("unable to add tag")
 		return errors.New("unable to add tag")
 	}
