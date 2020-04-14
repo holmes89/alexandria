@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS tags(
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  display_name VARCHAR(128),
+  display_name VARCHAR(128) UNIQUE NOT NULL,
   color CHAR(7)
 );
 

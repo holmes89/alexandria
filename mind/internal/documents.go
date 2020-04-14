@@ -24,7 +24,7 @@ const baseDocumentsPath = "/documents"
 
 func (app *App) FindDocumentByID(id string) (*Document, error) {
 	endpoint := fmt.Sprintf("%s/%s/%s", app.Endpoint, baseDocumentsPath, id)
-	client := resty.New()
+	client := resty.New().SetAuthToken(app.Token)
 	results, err := client.R().Get(endpoint)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (app *App) FindDocumentByID(id string) (*Document, error) {
 
 func (app *App) FindDocuments() ([]*Document, error) {
 	endpoint := fmt.Sprintf("%s/%s/", app.Endpoint, baseDocumentsPath)
-	client := resty.New()
+	client := resty.New().SetAuthToken(app.Token)
 	results, err := client.R().Get(endpoint)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (app *App) DownloadDocument(id string) error {
 	}
 	fname := path.Base(u.Path)
 
-	client := resty.New()
+	client := resty.New().SetAuthToken(app.Token)
 	if _, err = client.R().SetOutput(fname).Get(p); err != nil {
 		return err
 	}

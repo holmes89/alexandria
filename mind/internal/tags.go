@@ -16,7 +16,7 @@ const baseTagPath = "/tags"
 
 func (app *App) FindTags() ([]Tag, error) {
 	endpoint := fmt.Sprintf("%s/%s/", app.Endpoint, baseTagPath)
-	client := resty.New()
+	client := resty.New().SetAuthToken(app.Token)
 	results, err := client.R().Get(endpoint)
 	if err != nil {
 		return nil, err
@@ -28,4 +28,16 @@ func (app *App) FindTags() ([]Tag, error) {
 	}
 
 	return entities, nil
+}
+
+
+func (app *App) CreateTag(tag string) error {
+	endpoint := fmt.Sprintf("%s/%s/", app.Endpoint, baseTagPath)
+	client := resty.New().SetAuthToken(app.Token)
+	_, err := client.R().SetBody(Tag{DisplayName:tag}).Post(endpoint)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

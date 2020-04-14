@@ -5,20 +5,18 @@ Copyright © 2020 Joel Holmes <holmes89@gmail.com>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
 // addTagCmd represents the addTag command
 var addTagCmd = &cobra.Command{
-	Use:        "addTag",
+	Use:        "tag",
 	Short:      "Create a new tag",
 	Long:       `Add a new tag to the system providing a name`,
 	Args:       cobra.ExactArgs(1),
 	ArgAliases: []string{"name"},
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("addTag called")
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return app.CreateTag(args[0])
 	},
 }
 

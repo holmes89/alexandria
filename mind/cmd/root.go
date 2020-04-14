@@ -129,5 +129,4 @@ func initConfig() {
 	}
 
 	app.Config = viper.GetViper()
-
 }

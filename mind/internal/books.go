@@ -9,7 +9,7 @@ const baseBooksPath = "/books"
 
 func (app *App) UploadBook(path, name string) error {
 	endpoint := fmt.Sprintf("%s/%s/", app.Endpoint, baseBooksPath)
-	client := resty.New()
+	client := resty.New().SetAuthToken(app.Token)
 	_, err := client.R().SetFile("file", path).
 		SetFormData(map[string]string{
 			"name": name,
