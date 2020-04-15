@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS tags(
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   display_name VARCHAR(128) UNIQUE NOT NULL,
-  color CHAR(7)
+  color VARCHAR(8)
 );
 
 CREATE TABLE IF NOT EXISTS tagged_resources(
