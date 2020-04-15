@@ -30,11 +30,24 @@ func (app *App) FindTags() ([]Tag, error) {
 	return entities, nil
 }
 
+func (app *App) TagMap() (map[string]string, error) {
+	tags, err := app.FindTags()
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]string)
+	for _, t := range tags {
+		m[t.ID] = t.DisplayName
+	}
+
+	return m, nil
+}
 
 func (app *App) CreateTag(tag string) error {
 	endpoint := fmt.Sprintf("%s/%s/", app.Endpoint, baseTagPath)
 	client := resty.New().SetAuthToken(app.Token)
-	_, err := client.R().SetBody(Tag{DisplayName:tag}).Post(endpoint)
+	_, err := client.R().SetBody(Tag{DisplayName: tag}).Post(endpoint)
 	if err != nil {
 		return err
 	}

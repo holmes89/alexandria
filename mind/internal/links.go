@@ -33,6 +33,20 @@ func (app *App) FindLinks() ([]Link, error) {
 
 	return entities, nil
 }
+func (app *App) FindLinkByID(id string) (entity Link, err error) {
+	endpoint := fmt.Sprintf("%s/%s/%s", app.Endpoint, baseLinkPath, id)
+	client := resty.New().SetAuthToken(app.Token)
+	results, err := client.R().Get(endpoint)
+	if err != nil {
+		return entity, err
+	}
+
+	if err := json.Unmarshal(results.Body(), &entity); err != nil {
+		return entity, err
+	}
+
+	return entity, nil
+}
 
 func (app *App) CreateLink(url string) error {
 	endpoint := fmt.Sprintf("%s/%s/", app.Endpoint, baseLinkPath)

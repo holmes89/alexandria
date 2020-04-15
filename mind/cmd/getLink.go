@@ -18,6 +18,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/yaml.v2"
 
 	"github.com/spf13/cobra"
 )
@@ -46,6 +47,17 @@ var getLinkCmd = &cobra.Command{
 			}
 			fmt.Fprintf(tw, "\n\n")
 			tw.Flush()
+		} else {
+			results, err := app.FindLinkByID(args[0])
+			if err != nil {
+				if debug {
+					errString := fmt.Errorf("error: %w", err)
+					fmt.Fprintln(out, errString.Error())
+				}
+				return errors.New("unable to fetch link")
+			}
+			b, _ := yaml.Marshal(results)
+			fmt.Fprintln(out, string(b))
 		}
 
 		return nil

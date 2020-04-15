@@ -81,7 +81,7 @@ func retryPostgres(attempts int, sleep time.Duration, callback func() (*sql.DB, 
 func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*documents.Document, err error) {
 	docs = []*documents.Document{}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("id", "description", "displayName", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
+	rows, err := ps.Select("id", "description", "displayName", "name", "type", "path", "string_agg(tagged_resources.id, ',')", "created", "updated").
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
 		Suffix("GROUP BY documents.id ORDER BY display_name DESC").
@@ -107,7 +107,7 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 
 func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.Document, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	row := ps.Select("id", "description", "displayName", "name", "type", "path", "created", "updated").
+	row := ps.Select("id", "description", "displayName", "name", "type", "path", "string_agg(tagged_resources.id, ',')", "created", "updated").
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
 		Suffix("GROUP BY documents.id ORDER BY display_name DESC").
@@ -115,7 +115,7 @@ func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.
 	doc := &documents.Document{}
 	var tagList string
 	doc.Tags = []string{}
-	if err := row.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
+	if err := row.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &tagList, &doc.Created, &doc.Updated); err != nil {
 		logrus.WithError(err).Warn("unable to scan doc results")
 	}
 	doc.Tags = append(doc.Tags, strings.Split(tagList, ",")...)
@@ -377,7 +377,7 @@ func (r *PostgresDatabase) AddResourceTag(resourceID string, resourceType tags.R
 		logrus.WithError(err).Error("unable to upsert tag")
 		return errors.New("unable to upsert tag")
 	}
-	if _, err := r.conn.Exec("INSERT INTO tagged_resources SELECT id, $1, $2  FROM tags where display_name = $3", resourceID, resourceType, tagName); err != nil {
+	if _, err := r.conn.Exec("INSERT INTO tagged_resources(id, resource_id, resource_type) SELECT id, $1, $2  FROM tags where display_name = $3", resourceID, resourceType, tagName); err != nil {
 		logrus.WithError(err).Error("unable to add tag")
 		return errors.New("unable to add tag")
 	}

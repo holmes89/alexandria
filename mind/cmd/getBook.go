@@ -36,15 +36,13 @@ var getBookCmd = &cobra.Command{
 	Long: `List out all books in library or details on a specific book. List will give you high level information
 			like name and upload date.
 
-			Detailed information will reflect all known information about the book. This will need to be done by ID.
-
-			Note: this is all "documents" currently in the future I should distinguish between papers and books`,
+			Detailed information will reflect all known information about the book. This will need to be done by ID.`,
 	Args:       cobra.MaximumNArgs(1),
 	ArgAliases: []string{"id"},
 	Aliases:    []string{"books"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			results, err := app.FindDocuments()
+			results, err := app.FindBooks()
 			if err != nil {
 				if debug {
 					errString := fmt.Errorf("error: %w", err)
@@ -60,7 +58,7 @@ var getBookCmd = &cobra.Command{
 			fmt.Fprintf(tw, "\n\n")
 			tw.Flush()
 		} else {
-			results, err := app.FindDocumentByID(args[0])
+			results, err := app.FindBookByID(args[0])
 			if err != nil {
 				if debug {
 					errString := fmt.Errorf("error: %w", err)
