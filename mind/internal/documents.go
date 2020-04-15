@@ -16,6 +16,7 @@ type Document struct {
 	Path        string     `json:"path" yaml:"-"`
 	Type        string     `json:"type" yaml:"type"`
 	Description string     `json:"description" yaml:"description"`
+	Tags        []string   `json:"tag_ids" yaml:"tags"`
 	Created     time.Time  `json:"created" yaml:"created"`
 	Updated     *time.Time `json:"updated" yaml:"updated"`
 }

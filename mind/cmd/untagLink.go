@@ -16,21 +16,20 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
 // untagLinkCmd represents the untagLink command
 var untagLinkCmd = &cobra.Command{
-	Use:   "link",
-	Short: "Remove tag from link",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("untagLink called")
+	Use:        "link",
+	Short:      "Remove tag from link",
+	Args:       cobra.ExactArgs(2),
+	ArgAliases: []string{"id", "tag"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return app.UntagLink(args[0], args[1])
 	},
 }
 
 func init() {
 	untagCmd.AddCommand(untagLinkCmd)
-
 }

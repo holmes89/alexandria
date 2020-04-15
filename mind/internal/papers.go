@@ -86,3 +86,14 @@ func (app *App) TagPaper(id, tag string) error {
 
 	return nil
 }
+
+func (app *App) UntagPaper(id, tag string) error {
+	endpoint := fmt.Sprintf("%s/%s/%s/tags/", app.Endpoint, basePapersPath, id)
+	client := resty.New().SetAuthToken(app.Token)
+	_, err := client.R().SetBody(tagRequest{Tag: tag}).Delete(endpoint)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

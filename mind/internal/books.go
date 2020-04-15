@@ -85,3 +85,14 @@ func (app *App) TagBook(id, tag string) error {
 
 	return nil
 }
+
+func (app *App) UntagBook(id, tag string) error {
+	endpoint := fmt.Sprintf("%s/%s/%s/tags/", app.Endpoint, baseBooksPath, id)
+	client := resty.New().SetAuthToken(app.Token)
+	_, err := client.R().SetBody(tagRequest{Tag: tag}).Delete(endpoint)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
