@@ -111,7 +111,7 @@ func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
 		Suffix("GROUP BY documents.id").
-		Where(sq.Eq{"id": id}).RunWith(r.conn).QueryRow()
+		Where(sq.Eq{"documents.id": id}).RunWith(r.conn).QueryRow()
 	doc := &documents.Document{}
 	var tagList string
 	doc.Tags = []string{}

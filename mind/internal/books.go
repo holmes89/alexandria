@@ -11,7 +11,7 @@ import (
 const baseBooksPath = "/books"
 
 func (app *App) FindBookByID(id string) (*Document, error) {
-	endpoint := fmt.Sprintf("%s/%s/%s", app.Endpoint, baseBooksPath, id)
+	endpoint := fmt.Sprintf("%s/%s/%s", app.Endpoint, baseDocumentsPath, id)
 	client := resty.New().SetAuthToken(app.Token)
 	results, err := client.R().Get(endpoint)
 	if err != nil {
