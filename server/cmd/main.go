@@ -2,11 +2,13 @@ package main
 
 import (
 	"alexandria/internal/backup"
+	"alexandria/internal/books"
 	"alexandria/internal/common"
 	"alexandria/internal/database"
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
 	"alexandria/internal/links"
+	"alexandria/internal/papers"
 	"alexandria/internal/tags"
 	"alexandria/internal/user"
 	"context"
@@ -38,8 +40,8 @@ func NewApp() *fx.App {
 			common.NewBucketDocumentStorage,
 			common.NewBackupStorage,
 			documents.NewDocumentService,
-			documents.NewBookService,
-			documents.NewPaperService,
+			books.NewBookService,
+			papers.NewPaperService,
 			links.NewService,
 			database.NewPostgresDatabase,
 			database.NewPostgresDocumentRepository,
@@ -51,9 +53,9 @@ func NewApp() *fx.App {
 			NewMux,
 		),
 		fx.Invoke(documents.MakeDocumentHandler,
-			documents.MakeBookHandler,
+			books.MakeBookHandler,
 			user.MakeLoginHandler,
-			documents.MakePaperHandler,
+			papers.MakePaperHandler,
 			journal.MakeJournalHandler,
 			links.MakeLinksHandler,
 			tags.MakeLinksHandler,

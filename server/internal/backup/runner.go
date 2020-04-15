@@ -23,6 +23,8 @@ type runner struct {
 	storage       common.BackupSave
 }
 
+var fileName = common.GetEnv("BACKUP_FILE", "backup.json")
+
 func NewBackupRunner(lc fx.Lifecycle, db *database.PostgresDatabase, storage common.BackupSave) {
 	r := &runner{
 		documentsRepo: db,
@@ -82,7 +84,7 @@ func (r *runner) backup() {
 		logrus.WithError(err).Fatal("unable to marshall backup")
 	}
 
-	location, err := r.storage.Save(context.Background(), "backup.json", bytes.NewReader(marshalled))
+	location, err := r.storage.Save(context.Background(), fileName, bytes.NewReader(marshalled))
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to send to bucket")
 	}

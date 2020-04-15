@@ -29,13 +29,14 @@ type Document struct {
 	Path        string     `json:"path"`
 	Type        string     `json:"type"`
 	Description string     `json:"description"`
+	Tags        []string   `json:"tag_ids"`
 	Created     time.Time  `json:"created"`
 	Updated     *time.Time `json:"updated"`
 }
 
 type DocumentService interface {
-	GetAll(ctx context.Context, filter map[string]interface{}) ([]*Document, error)
-	GetByID(ctx context.Context, id string) (*Document, error)
+	FindAll(ctx context.Context, filter map[string]interface{}) ([]*Document, error)
+	FindByID(ctx context.Context, id string) (*Document, error)
 	Add(ctx context.Context, file multipart.File, document *Document) error
 	Delete(ctx context.Context, id string) error
 	Scan(ctx context.Context) error
@@ -63,7 +64,7 @@ func NewDocumentService(storage common.DocumentStorage, repo DocumentRepository)
 	}
 }
 
-func (s *documentService) GetAll(ctx context.Context, filter map[string]interface{}) ([]*Document, error) {
+func (s *documentService) FindAll(ctx context.Context, filter map[string]interface{}) ([]*Document, error) {
 	entities, err := s.repo.FindAll(ctx, filter)
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch documents from repository")
@@ -72,7 +73,7 @@ func (s *documentService) GetAll(ctx context.Context, filter map[string]interfac
 	return entities, nil
 }
 
-func (s *documentService) GetByID(ctx context.Context, id string) (*Document, error) {
+func (s *documentService) FindByID(ctx context.Context, id string) (*Document, error) {
 	entity, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		logrus.WithError(err).WithField("id", id).Error("unable to fetch doc from repository")

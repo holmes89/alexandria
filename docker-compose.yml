@@ -17,32 +17,11 @@ services:
       JWT_SECRET: "test"
       DEFAULT_USER: "holmes89"
       DEFAULT_PASSWORD: "password"
+      BACKUP_FILE: "backup_local.json"
     ports:
       - 8081:8080
     volumes:
       - ${PWD}/creds.json:/creds.json
-  # journal-api:
-  #  restart: always
-  #  image: holmes89/journal-api
-  #  build:
-  #    context: .
-  #    dockerfile: journal/Dockerfile
-  #    target: prod
-  #  environment:
-  #    DATABASE_URL: "postgresql://postgres:${DB_PASSWORD}@db/mind?sslmode=disable"
-  #  ports:
-  #    - 8000:8000
-  # links-api:
-  #   restart: always
-  #   image: holmes89/links-api
-  #   build:
-  #    context: .
-  #    dockerfile: links/Dockerfile
-  #    target: prod
-  #   environment:
-  #     DATABASE_URL: "jdbc:postgresql://db/mind?user=postgres&password=${DB_PASSWORD}&sslmode=disable"
-  #   ports:
-  #     - 3000:3000
   db:
     image: postgres
     restart: always

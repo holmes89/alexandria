@@ -81,8 +81,11 @@ func retryPostgres(attempts int, sleep time.Duration, callback func() (*sql.DB, 
 func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*documents.Document, err error) {
 	docs = []*documents.Document{}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("id", "description", "displayName", "name", "type", "path", "created", "updated").
-		From("documents").Where(filter).RunWith(r.conn).Query()
+	rows, err := ps.Select("id", "description", "displayName", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
+		From("documents").
+		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
+		Suffix("GROUP BY documents.id ORDER BY display_name DESC").
+		Where(filter).RunWith(r.conn).Query()
 
 	if err != nil {
 		logrus.WithError(err).Error("unable to fetch results")
@@ -90,9 +93,13 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 	}
 	for rows.Next() {
 		doc := &documents.Document{}
-		if err := rows.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
+		var tagList string
+		doc.Tags = []string{}
+		if err := rows.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &tagList, &doc.Created, &doc.Updated); err != nil {
 			logrus.WithError(err).Warn("unable to scan doc results")
 		}
+
+		doc.Tags = append(doc.Tags, strings.Split(tagList, ",")...)
 		docs = append(docs, doc)
 	}
 	return docs, nil
@@ -101,12 +108,17 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.Document, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	row := ps.Select("id", "description", "displayName", "name", "type", "path", "created", "updated").
-		From("documents").Where(sq.Eq{"id": id}).RunWith(r.conn).QueryRow()
+		From("documents").
+		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
+		Suffix("GROUP BY documents.id ORDER BY display_name DESC").
+		Where(sq.Eq{"id": id}).RunWith(r.conn).QueryRow()
 	doc := &documents.Document{}
+	var tagList string
+	doc.Tags = []string{}
 	if err := row.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &doc.Created, &doc.Updated); err != nil {
 		logrus.WithError(err).Warn("unable to scan doc results")
 	}
-
+	doc.Tags = append(doc.Tags, strings.Split(tagList, ",")...)
 	return doc, nil
 }
 
