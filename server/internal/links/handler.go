@@ -19,6 +19,7 @@ func MakeLinksHandler(mr *mux.Router, service Service) http.Handler {
 		service: service,
 	}
 	r.HandleFunc("/", h.FindAll).Methods("GET")
+	r.HandleFunc("/{id}", h.FindByID).Methods("GET")
 	r.HandleFunc("/", h.Create).Methods("POST")
 	r.HandleFunc("/{id}/tags/", h.AddTag).Methods("POST")
 	r.HandleFunc("/{id}/tags/", h.RemoveTag).Methods("DELETE")
@@ -36,6 +37,21 @@ func (h *linkHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.EncodeResponse(ctx, w, entities)
+}
+
+func (h *linkHandler) FindByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	entity, err := h.service.FindByID(id)
+	if err != nil {
+		common.MakeError(w, http.StatusBadRequest, "links", "Server error", "find")
+		return
+	}
+
+	common.EncodeResponse(ctx, w, entity)
 }
 
 func (h *linkHandler) Create(w http.ResponseWriter, r *http.Request) {

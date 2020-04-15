@@ -5,36 +5,30 @@ Copyright © 2020 Joel Holmes <holmes89@gmail.com>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+)
+
+var (
+	displayName string
+	docType     string
+	description string
 )
 
 // updateDocumentCmd represents the updateDocument command
 var updateDocumentCmd = &cobra.Command{
-	Use:   "updateDocument",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("updateDocument called")
+	Use:        "document",
+	Short:      "Update fields of document",
+	Args:       cobra.ExactArgs(1),
+	ArgAliases: []string{"id"},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return app.UpdateDocument(args[0], displayName, description, docType)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(updateDocumentCmd)
+	updateCmd.AddCommand(updateDocumentCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// updateDocumentCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// updateDocumentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	updateDocumentCmd.Flags().StringVar(&description, "description", "", "description of doc")
+	updateDocumentCmd.Flags().StringVar(&displayName, "display-name", "", "title of doc")
+	updateDocumentCmd.Flags().StringVar(&docType, "type", "", "type of doc")
 }

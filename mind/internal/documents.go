@@ -74,3 +74,34 @@ func (app *App) DownloadDocument(id string) error {
 	return nil
 
 }
+
+func (app *App) UpdateDocument(id, displayName, docType, description string) error {
+	endpoint := fmt.Sprintf("%s/%s/%s", app.Endpoint, baseDocumentsPath, id)
+
+	doc := Document{
+		ID:          id,
+		DisplayName: displayName,
+		Description: description,
+		Type:        docType,
+	}
+
+	client := resty.New().SetAuthToken(app.Token)
+	_, err := client.R().SetBody(doc).Patch(endpoint)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (app *App) DeleteDocument(id string) error {
+	endpoint := fmt.Sprintf("%s/%s/%s", app.Endpoint, baseDocumentsPath, id)
+
+	client := resty.New().SetAuthToken(app.Token)
+	_, err := client.R().Delete(endpoint)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

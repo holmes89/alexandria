@@ -34,11 +34,10 @@ func (app *App) FindLinks() ([]Link, error) {
 	return entities, nil
 }
 
-
 func (app *App) CreateLink(url string) error {
 	endpoint := fmt.Sprintf("%s/%s/", app.Endpoint, baseLinkPath)
 	client := resty.New().SetAuthToken(app.Token)
-	_, err := client.R().SetBody(Link{Link:url}).Post(endpoint)
+	_, err := client.R().SetBody(Link{Link: url}).Post(endpoint)
 	if err != nil {
 		return err
 	}
@@ -56,7 +55,6 @@ func (app *App) TagLink(id, tag string) error {
 
 	return nil
 }
-
 
 type tagRequest struct {
 	Tag string `json"tag"`

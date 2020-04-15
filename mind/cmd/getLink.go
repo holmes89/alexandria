@@ -24,24 +24,30 @@ import (
 
 // getLinkCmd represents the getLink command
 var getLinkCmd = &cobra.Command{
-	Use:   "links",
-	Short: "List all links",
+	Use:        "link",
+	Short:      "List all links",
+	Args:       cobra.MaximumNArgs(1),
+	ArgAliases: []string{"id"},
+	Aliases:    []string{"links"},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		results, err := app.FindLinks()
-		if err != nil {
-			if debug {
-				errString := fmt.Errorf("error: %w", err)
-				fmt.Fprintln(out, errString.Error())
+		if len(args) == 0 {
+			results, err := app.FindLinks()
+			if err != nil {
+				if debug {
+					errString := fmt.Errorf("error: %w", err)
+					fmt.Fprintln(out, errString.Error())
+				}
+				return errors.New("unable to fetch links")
 			}
-			return errors.New("unable to fetch links")
+			tw := getTabWriter()
+			fmt.Fprintf(tw, "\n %s\t%s\t", "ID", "Name")
+			for _, r := range results {
+				fmt.Fprintf(tw, "\n %s\t%s\t", r.ID, r.DisplayName)
+			}
+			fmt.Fprintf(tw, "\n\n")
+			tw.Flush()
 		}
-		tw := getTabWriter()
-		fmt.Fprintf(tw, "\n %s\t%s\t",  "ID", "Name")
-		for _, r := range results {
-			fmt.Fprintf(tw, "\n %s\t%s\t", r.ID, r.DisplayName)
-		}
-		fmt.Fprintf(tw, "\n\n")
-		tw.Flush()
+
 		return nil
 	},
 }

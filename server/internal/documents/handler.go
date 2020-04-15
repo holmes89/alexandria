@@ -38,6 +38,7 @@ func MakeBookHandler(mr *mux.Router, service BookService) http.Handler {
 
 	r.HandleFunc("/", h.FindAll).Methods("GET")
 	r.HandleFunc("/", h.Create).Methods("POST")
+	r.HandleFunc("/{id}", h.FindByID).Methods("GET")
 
 	return r
 }
@@ -54,6 +55,7 @@ func MakePaperHandler(mr *mux.Router, service PaperService) http.Handler {
 	}
 
 	r.HandleFunc("/", h.FindAll).Methods("GET")
+	r.HandleFunc("/{id}", h.FindByID).Methods("GET")
 	r.HandleFunc("/", h.Create).Methods("POST")
 
 	return r
@@ -209,6 +211,27 @@ func (h *bookHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	common.EncodeResponse(r.Context(), w, entity)
 }
 
+func (h *bookHandler) FindByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	id, ok := vars["id"]
+
+	if !ok {
+		common.MakeError(w, http.StatusBadRequest, "document", "Missing Id", "findbyid")
+		return
+	}
+
+	entity, err := h.service.GetByID(ctx, id)
+
+	if err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "findbyid")
+		return
+	}
+
+	common.EncodeResponse(r.Context(), w, entity)
+}
+
 func (h *paperHandler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -251,6 +274,27 @@ func (h *paperHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		common.MakeError(w, http.StatusInternalServerError, "paper", "Server Error", "findall")
+		return
+	}
+
+	common.EncodeResponse(r.Context(), w, entity)
+}
+
+func (h *paperHandler) FindByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	id, ok := vars["id"]
+
+	if !ok {
+		common.MakeError(w, http.StatusBadRequest, "document", "Missing Id", "findbyid")
+		return
+	}
+
+	entity, err := h.service.GetByID(ctx, id)
+
+	if err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "document", "Server Error", "findbyid")
 		return
 	}
 
