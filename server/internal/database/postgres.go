@@ -84,7 +84,7 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 	rows, err := ps.Select("documents.id", "description", "displayName", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
-		Suffix("GROUP BY documents.id ORDER BY displayName DESC").
+		Suffix("GROUP BY documents.id ORDER BY displayName ASC").
 		Where(filter).RunWith(r.conn).Query()
 
 	if err != nil {
