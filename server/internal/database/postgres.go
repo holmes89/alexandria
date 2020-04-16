@@ -81,7 +81,7 @@ func retryPostgres(attempts int, sleep time.Duration, callback func() (*sql.DB, 
 func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*documents.Document, err error) {
 	docs = []*documents.Document{}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("documents.id", "description", "display_name", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
+	rows, err := ps.Select("documents.id", "description", "display_name", "name", "type", "path", "COALESCE(string_agg(tagged_resources.id::character varying, ','), '')", "created", "updated").
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
 		Suffix("GROUP BY documents.id ORDER BY display_name ASC").
@@ -98,8 +98,9 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 		if err := rows.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &tagList, &doc.Created, &doc.Updated); err != nil {
 			logrus.WithError(err).Warn("unable to scan doc results")
 		}
-
-		doc.Tags = append(doc.Tags, strings.Split(tagList, ",")...)
+		if tagList != "" {
+			doc.Tags = append(doc.Tags, strings.Split(tagList, ",")...)
+		}
 		docs = append(docs, doc)
 	}
 	return docs, nil
@@ -107,7 +108,7 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 
 func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.Document, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	row := ps.Select("documents.id", "description", "display_name", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
+	row := ps.Select("documents.id", "description", "display_name", "name", "type", "path", "COALESCE(string_agg(tagged_resources.id::character varying, ','), '')", "created", "updated").
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
 		Suffix("GROUP BY documents.id").
@@ -118,7 +119,10 @@ func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.
 	if err := row.Scan(&doc.ID, &doc.Description, &doc.DisplayName, &doc.Name, &doc.Type, &doc.Path, &tagList, &doc.Created, &doc.Updated); err != nil {
 		logrus.WithError(err).Warn("unable to scan doc results")
 	}
-	doc.Tags = append(doc.Tags, strings.Split(tagList, ",")...)
+	if tagList != "" {
+		doc.Tags = append(doc.Tags, strings.Split(tagList, ",")...)
+	}
+
 	return doc, nil
 }
 
@@ -266,7 +270,7 @@ func (r *PostgresDatabase) CreateEntry(entry journal.Entry) (journal.Entry, erro
 
 func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("links.id", "link", "display_name", "icon_path", "string_agg(tagged_resources.id::character varying, ',')", "created").
+	rows, err := ps.Select("links.id", "link", "display_name", "icon_path", "COALESCE(string_agg(tagged_resources.id::character varying, ','), '')", "created").
 		From("links").
 		LeftJoin("tagged_resources ON links.id=tagged_resources.resource_id").Suffix("GROUP BY links.id ORDER BY created DESC").RunWith(r.conn).Query()
 	if err != nil {
@@ -281,8 +285,10 @@ func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 		if err := rows.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &tagList, &entry.Created); err != nil {
 			logrus.WithError(err).Warn("unable to scan link")
 		}
-		entryTags := strings.Split(tagList, ",")
-		entry.Tags = append(entry.Tags, entryTags...)
+		if tagList != "" {
+			entryTags := strings.Split(tagList, ",")
+			entry.Tags = append(entry.Tags, entryTags...)
+		}
 		entries = append(entries, entry)
 	}
 	rows.Close()
@@ -291,7 +297,7 @@ func (r *PostgresDatabase) FindAllLinks() ([]links.Link, error) {
 
 func (r *PostgresDatabase) FindLinkByID(id string) (entity links.Link, err error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rowscanner := ps.Select("links.id", "link", "display_name", "icon_path", "string_agg(tagged_resources.id::character varying, ',')", "created").
+	rowscanner := ps.Select("links.id", "link", "display_name", "icon_path", "COALESCE(string_agg(tagged_resources.id::character varying, ','), '')", "created").
 		From("links").
 		LeftJoin("tagged_resources ON links.id=tagged_resources.resource_id").
 		Where(sq.Eq{"links.id": id}).
@@ -306,8 +312,10 @@ func (r *PostgresDatabase) FindLinkByID(id string) (entity links.Link, err error
 	if err := rowscanner.Scan(&entry.ID, &entry.Link, &entry.DisplayName, &entry.IconPath, &tagList, &entry.Created); err != nil {
 		logrus.WithError(err).Warn("unable to scan link")
 	}
-	entryTags := strings.Split(tagList, ",")
-	entry.Tags = append(entry.Tags, entryTags...)
+	if tagList != "" {
+		entryTags := strings.Split(tagList, ",")
+		entry.Tags = append(entry.Tags, entryTags...)
+	}
 	return entry, nil
 }
 
@@ -365,7 +373,9 @@ func (r *PostgresDatabase) CreateTag(entry tags.Tag) (tags.Tag, error) {
 		RunWith(r.conn).
 		QueryRow().
 		Scan(&newEntry.ID); err != nil {
-
+		if err == sql.ErrNoRows {
+			return newEntry, nil
+		}
 		logrus.WithError(err).Error("unable to insert tag")
 		return newEntry, errors.New("unable to insert tag")
 	}
