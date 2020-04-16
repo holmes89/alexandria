@@ -4,13 +4,16 @@ import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
+import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Value)
 import Page.Home as Home
 import Page.Journal as Journal
 import Page.Links as Links
 import Page.ListBooks as ListBooks
+import Page.ListPapers as ListPapers
 import Page.Login as Login
 import Page.ViewBook as ViewBook
+import Page.ViewPaper as ViewPaper
 import Route exposing (Route)
 import Session exposing (..)
 import Url exposing (Url)
@@ -41,6 +44,8 @@ type Page
     | UnauthorizedPage
     | ListBooksPage ListBooks.Model
     | ViewBookPage ViewBook.Model
+    | ListPapersPage ListPapers.Model
+    | ViewPaperPage ViewPaper.Model
     | LoginPage Login.Model
     | HomePage
     | JournalPage Journal.Model
@@ -50,12 +55,15 @@ type Page
 type Msg
     = ListBooksPageMsg ListBooks.Msg
     | ViewBookPageMsg ViewBook.Msg
+    | ListPapersPageMsg ListPapers.Msg
+    | ViewPaperPageMsg ViewPaper.Msg
     | LoginPageMsg Login.Msg
     | JournalPageMsg Journal.Msg
     | LinksPageMsg Links.Msg
     | LinkClicked UrlRequest
     | UrlChanged Url
     | LoggedIn Msg
+    | Logout
 
 
 init : Maybe String -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -141,6 +149,20 @@ initCurrentPage ( model, existingCmds ) =
                     in
                     ( ViewBookPage pageModel, Cmd.map ViewBookPageMsg pageCmds )
 
+                ( Route.Papers, Authenticated token ) ->
+                    let
+                        ( pageModel, pageCmds ) =
+                            ListPapers.init token
+                    in
+                    ( ListPapersPage pageModel, Cmd.map ListPapersPageMsg pageCmds )
+
+                ( Route.Paper paperID, Authenticated token ) ->
+                    let
+                        ( pageModel, pageCmds ) =
+                            ViewPaper.init paperID model.navKey token
+                    in
+                    ( ViewPaperPage pageModel, Cmd.map ViewPaperPageMsg pageCmds )
+
                 ( _, Unauthenticated ) ->
                     ( UnauthorizedPage, Cmd.none )
     in
@@ -154,7 +176,7 @@ view model =
     case model.session of
         Authenticated _ ->
             { title = "Alexandria"
-            , body = [ viewHeader model, navbar, currentView model ]
+            , body = [ viewAuthedHeader model, navbar, currentView model ]
             }
 
         Unauthenticated ->
@@ -248,6 +270,26 @@ viewHeader model =
         ]
 
 
+viewAuthedHeader : Model -> Html Msg
+viewAuthedHeader model =
+    div []
+        [ nav [ class "navbar", class "is-dark" ]
+            [ div [ class "navbar-brand" ]
+                [ a [ href "/" ]
+                    [ div [ class "navbar-item" ]
+                        [ span [ style "color" "white" ] [ text "Alexandria", img [ src "/alexandria.png" ] [] ]
+                        ]
+                    ]
+                ]
+            , div [ class "navbar-end" ]
+                [ div [ class "navbar-item", onClick Logout ]
+                    [ span [ style "color" "white" ] [ i [ class "fas", class "fa-sign-out-alt", style "color" "white" ] [] ]
+                    ]
+                ]
+            ]
+        ]
+
+
 currentView : Model -> Html Msg
 currentView model =
     case model.page of
@@ -280,6 +322,14 @@ currentView model =
             ViewBook.view pageModel
                 |> Html.map ViewBookPageMsg
 
+        ListPapersPage pageModel ->
+            ListPapers.view pageModel
+                |> Html.map ListPapersPageMsg
+
+        ViewPaperPage pageModel ->
+            ViewPaper.view pageModel
+                |> Html.map ViewPaperPageMsg
+
 
 notFoundView : Html msg
 notFoundView =
@@ -310,6 +360,24 @@ update msg model =
             in
             ( { model | page = ViewBookPage updatedPageModel }
             , Cmd.map ViewBookPageMsg updatedCmd
+            )
+
+        ( ListPapersPageMsg subMsg, ListPapersPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    ListPapers.update subMsg pageModel
+            in
+            ( { model | page = ListPapersPage updatedPageModel }
+            , Cmd.map ListPapersPageMsg updatedCmd
+            )
+
+        ( ViewPaperPageMsg subMsg, ViewPaperPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    ViewPaper.update subMsg pageModel
+            in
+            ( { model | page = ViewPaperPage updatedPageModel }
+            , Cmd.map ViewPaperPageMsg updatedCmd
             )
 
         ( JournalPageMsg subMsg, JournalPage pageModel ) ->
@@ -348,6 +416,9 @@ update msg model =
                     ( { model | page = LoginPage updatedPageModel }
                     , Cmd.map LoginPageMsg updatedCmd
                     )
+
+        ( Logout, _ ) ->
+            ( { model | session = Unauthenticated }, Cmd.batch [ Session.logout, Nav.pushUrl model.navKey "/login" ] )
 
         ( LinkClicked urlRequest, _ ) ->
             case urlRequest of

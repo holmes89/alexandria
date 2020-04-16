@@ -1,4 +1,4 @@
-port module Session exposing (Session(..), Token, storageDecoder, storeCredWith)
+port module Session exposing (Session(..), Token, logout, storageDecoder, storeCredWith)
 
 import Json.Decode as Decode exposing (Decoder, Value, field, string)
 import Json.Encode as Encode
