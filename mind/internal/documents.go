@@ -75,7 +75,7 @@ func (app *App) DownloadDocument(id string) error {
 	return nil
 }
 
-func (app *App) UpdateDocument(id, displayName, docType, description string) error {
+func (app *App) UpdateDocument(id, displayName, description, docType string) error {
 	endpoint := fmt.Sprintf("%s/%s/%s", app.Endpoint, baseDocumentsPath, id)
 
 	doc := Document{

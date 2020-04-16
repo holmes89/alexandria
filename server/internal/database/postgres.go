@@ -81,10 +81,10 @@ func retryPostgres(attempts int, sleep time.Duration, callback func() (*sql.DB, 
 func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interface{}) (docs []*documents.Document, err error) {
 	docs = []*documents.Document{}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("documents.id", "description", "displayName", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
+	rows, err := ps.Select("documents.id", "description", "display_name", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
-		Suffix("GROUP BY documents.id ORDER BY displayName ASC").
+		Suffix("GROUP BY documents.id ORDER BY display_name ASC").
 		Where(filter).RunWith(r.conn).Query()
 
 	if err != nil {
@@ -107,7 +107,7 @@ func (r *PostgresDatabase) FindAll(ctx context.Context, filter map[string]interf
 
 func (r *PostgresDatabase) FindByID(ctx context.Context, id string) (*documents.Document, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	row := ps.Select("documents.id", "description", "displayName", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
+	row := ps.Select("documents.id", "description", "display_name", "name", "type", "path", "string_agg(tagged_resources.id::character varying, ',')", "created", "updated").
 		From("documents").
 		LeftJoin("tagged_resources ON documents.id=tagged_resources.resource_id").
 		Suffix("GROUP BY documents.id").
@@ -126,10 +126,10 @@ func (r *PostgresDatabase) UpdateDocument(_ context.Context, doc documents.Docum
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	_, err = ps.Update("documents").SetMap(
 		map[string]interface{}{
-			"description": doc.Description,
-			"displayName": doc.DisplayName,
-			"type":        doc.Type,
-			"updated":     time.Now()}).
+			"description":  doc.Description,
+			"display_name": doc.DisplayName,
+			"type":         doc.Type,
+			"updated":      time.Now()}).
 		Where(sq.Eq{"id": doc.ID}).RunWith(r.conn).Exec()
 
 	if err != nil {
@@ -154,7 +154,7 @@ func (r *PostgresDatabase) existsByPath(ctx context.Context, path string) (bool,
 
 func (r *PostgresDatabase) Insert(ctx context.Context, doc *documents.Document) error {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	if _, err := ps.Insert("documents").Columns("id", "description", "displayName", "name", "type", "path").
+	if _, err := ps.Insert("documents").Columns("id", "description", "display_name", "name", "type", "path").
 		Values(doc.ID, doc.Description, doc.DisplayName, doc.Name, doc.Type, doc.Path).
 		RunWith(r.conn).
 		Exec(); err != nil {
@@ -334,7 +334,7 @@ func (r *PostgresDatabase) CreateLink(entry links.Link) (links.Link, error) {
 
 func (r *PostgresDatabase) FindAllTags() ([]tags.Tag, error) {
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-	rows, err := ps.Select("id", "display_name", "color").From("tags").RunWith(r.conn).Query()
+	rows, err := ps.Select("id", "display_name", "color").From("tags").Suffix("ORDER BY display_name ASC").RunWith(r.conn).Query()
 	if err != nil {
 		logrus.WithError(err).Error("unable to find tags")
 		return nil, errors.New("unable to find tags")

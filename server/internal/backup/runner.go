@@ -6,6 +6,7 @@ import (
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
 	"alexandria/internal/links"
+	"alexandria/internal/tags"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -20,6 +21,7 @@ type runner struct {
 	documentsRepo documents.DocumentRepository
 	journalRepo   journal.Repository
 	linksRepo     links.Repository
+	tagsRepo      tags.Repository
 	storage       common.BackupSave
 }
 
@@ -30,6 +32,7 @@ func NewBackupRunner(lc fx.Lifecycle, db *database.PostgresDatabase, storage com
 		documentsRepo: db,
 		journalRepo:   db,
 		linksRepo:     db,
+		tagsRepo:      db,
 		storage:       storage,
 	}
 
@@ -51,6 +54,7 @@ type backup struct {
 	Docs    []*documents.Document `json:"documents"`
 	Journal []journal.Entry       `json:"journal_entries"`
 	Links   []links.Link          `json:"links"`
+	Tags    []tags.Tag            `json:"tags"`
 }
 
 func (r *runner) backup() {
@@ -72,6 +76,12 @@ func (r *runner) backup() {
 	egroup.Go(func() error {
 		l, err := r.linksRepo.FindAllLinks()
 		b.Links = l
+		return err
+	})
+
+	egroup.Go(func() error {
+		l, err := r.tagsRepo.FindAllTags()
+		b.Tags = l
 		return err
 	})
 
