@@ -1,11 +1,13 @@
 module Page.ListBooks exposing (Model, Msg, init, update, view)
 
 import Book exposing (Book, booksDecoder)
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, src, style)
 import Html.Events exposing (..)
 import Http
 import Session exposing (..)
+import Tag exposing (Tag, fetchTags)
 
 
 
@@ -21,6 +23,7 @@ type Status
 type alias Model =
     { token : Token
     , status : Status
+    , tagDict : Dict String Tag
     }
 
 
@@ -28,8 +31,9 @@ init : Token -> ( Model, Cmd Msg )
 init token =
     ( { token = token
       , status = Loading
+      , tagDict = Dict.empty
       }
-    , fetchBooks token
+    , fetchTags token FetchTags
     )
 
 
@@ -39,12 +43,21 @@ init token =
 
 type Msg
     = FetchBooks (Result Http.Error (List Book))
+    | FetchTags (Result Http.Error (List Tag))
     | Error
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        FetchTags result ->
+            case result of
+                Ok tags ->
+                    ( { model | tagDict = Dict.fromList (List.map (\e -> ( e.id, e )) tags) }, fetchBooks model.token )
+
+                Err _ ->
+                    ( { model | status = Failure }, Cmd.none )
+
         FetchBooks result ->
             case result of
                 Ok url ->
@@ -109,6 +122,22 @@ viewBooks model =
                                     ]
                                 , div [ class "card-content", style "text-align" "center" ]
                                     [ img [ src ("http://read.jholmestech.com/assets/covers/" ++ l.id ++ ".jpg"), style "max-width" "300px", class "cover" ] []
+                                    , div [ class "tags" ]
+                                        (List.map
+                                            (\t ->
+                                                let
+                                                    tagEntry =
+                                                        Dict.get t model.tagDict
+                                                in
+                                                case tagEntry of
+                                                    Nothing ->
+                                                        span [ class "tag" ] [ text "Unknown" ]
+
+                                                    Just tag ->
+                                                        span [ class "tag is-dark", style "background-color" tag.color ] [ text tag.displayName ]
+                                            )
+                                            l.tags
+                                        )
                                     ]
                                 , footer [ class "card-footer" ]
                                     [ a [ class "card-footer-item", href viewPath ] [ i [ class "fas", class "fa-book-open" ] [], text "View" ]
