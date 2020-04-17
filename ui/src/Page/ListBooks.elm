@@ -115,7 +115,7 @@ viewBooks model =
                             viewPath =
                                 "/books/" ++ l.id
                         in
-                        div [ class "column", class "is-one-quarter" ]
+                        div [ class "column", class "is-one-quarter-desktop is-full-mobile" ]
                             [ div [ class "card" ]
                                 [ header [ class "card-header" ]
                                     [ p [ class "card-header-title" ] [ text l.displayName ]
