@@ -1,11 +1,13 @@
 module Page.Links exposing (Model, Msg, init, update, view)
 
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id, placeholder, rows, src, style, target, value)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Links exposing (Link, linkDecoder, linkEncoder, linksDecoder)
 import Session exposing (..)
+import Tag exposing (Tag, fetchTags)
 import Time exposing (Posix)
 
 
@@ -24,6 +26,7 @@ type alias Model =
     , status : Status
     , list : List Link
     , content : String
+    , tagDict : Dict String Tag
     }
 
 
@@ -33,8 +36,9 @@ init token =
       , status = Loading
       , list = []
       , content = ""
+      , tagDict = Dict.empty
       }
-    , fetchLinks token
+    , fetchTags token FetchTags
     )
 
 
@@ -44,6 +48,7 @@ init token =
 
 type Msg
     = FetchLinks (Result Http.Error (List Link))
+    | FetchTags (Result Http.Error (List Tag))
     | AddLink (Result Http.Error Link)
     | Error
     | UpdateContent String
@@ -53,6 +58,14 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        FetchTags result ->
+            case result of
+                Ok tags ->
+                    ( { model | tagDict = Dict.fromList (List.map (\e -> ( e.id, e )) tags) }, fetchLinks model.token )
+
+                Err _ ->
+                    ( { model | status = Failure }, Cmd.none )
+
         FetchLinks result ->
             case result of
                 Ok list ->
@@ -88,8 +101,8 @@ subscriptions model =
     Sub.none
 
 
-viewLink : Link -> Html Msg
-viewLink link =
+viewLink : Link -> Dict String Tag -> Html Msg
+viewLink link tagDict =
     div [ class "column is-full" ]
         [ div [ class "card" ]
             [ div [ class "card-content" ]
@@ -103,6 +116,22 @@ viewLink link =
                             [ a [ href link.link, target "_blank" ] [ h4 [] [ text link.displayName ] ] ]
                         ]
                     ]
+                , div [ class "tags" ]
+                    (List.map
+                        (\t ->
+                            let
+                                tagEntry =
+                                    Dict.get t tagDict
+                            in
+                            case tagEntry of
+                                Nothing ->
+                                    span [ class "tag" ] [ text "Unknown" ]
+
+                                Just tag ->
+                                    span [ class "tag is-dark", style "background-color" tag.color ] [ text tag.displayName ]
+                        )
+                        link.tags
+                    )
                 ]
             ]
         ]
@@ -138,7 +167,7 @@ view model =
                         ]
                     , div [ class "columns is-multiline" ]
                         (List.map
-                            viewLink
+                            (\e -> viewLink e model.tagDict)
                             entries
                         )
                     ]
@@ -166,7 +195,7 @@ createLink : Model -> Cmd Msg
 createLink model =
     let
         link =
-            { id = "", link = model.content, displayName = "", iconPath = "", created = Time.millisToPosix 0 }
+            { id = "", link = model.content, displayName = "", iconPath = "", created = Time.millisToPosix 0, tags = [] }
 
         token =
             model.token

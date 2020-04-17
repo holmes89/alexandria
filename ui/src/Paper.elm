@@ -1,6 +1,6 @@
 module Paper exposing (Paper, PaperID, paperDecoder, papersDecoder)
 
-import Json.Decode as Decode exposing (Decoder, field, string)
+import Json.Decode as Decode exposing (Decoder, field, list, string)
 import Json.Decode.Pipeline exposing (optional, required)
 
 
@@ -9,6 +9,7 @@ type alias Paper =
     , displayName : String
     , description : String
     , path : String
+    , tags : List String
     }
 
 
@@ -23,6 +24,7 @@ paperDecoder =
         |> required "display_name" string
         |> required "description" string
         |> required "path" string
+        |> required "tag_ids" (list string)
 
 
 papersDecoder : Decoder (List Paper)

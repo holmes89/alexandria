@@ -1,6 +1,6 @@
 module Links exposing (Link, linkDecoder, linkEncoder, linksDecoder)
 
-import Json.Decode as Decode exposing (Decoder, field, string)
+import Json.Decode as Decode exposing (Decoder, field, list, string)
 import Json.Decode.Extra exposing (datetime)
 import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
@@ -13,6 +13,7 @@ type alias Link =
     , displayName : String
     , iconPath : String
     , created : Posix
+    , tags : List String
     }
 
 
@@ -24,6 +25,7 @@ linkDecoder =
         |> required "display_name" string
         |> required "icon_path" string
         |> required "created" datetime
+        |> required "tag_ids" (list string)
 
 
 linksDecoder : Decoder (List Link)
