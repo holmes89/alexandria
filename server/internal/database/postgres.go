@@ -324,6 +324,7 @@ func (r *PostgresDatabase) CreateLink(entry links.Link) (links.Link, error) {
 		Link:        entry.Link,
 		DisplayName: entry.DisplayName,
 		IconPath:    entry.IconPath,
+		Tags:        []string{},
 	}
 	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 	if err := ps.Insert("links").
