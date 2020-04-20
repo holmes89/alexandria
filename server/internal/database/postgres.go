@@ -20,6 +20,7 @@ import (
 	"github.com/iancoleman/strcase"
 	_ "github.com/lib/pq" // Used for specifying the type client we are creating
 	"github.com/sirupsen/logrus"
+	"go.uber.org/fx"
 	"strings"
 	"time"
 )
@@ -28,7 +29,7 @@ type PostgresDatabase struct {
 	conn *sql.DB
 }
 
-func NewPostgresDatabase(config common.PostgresDatabaseConfig) *PostgresDatabase {
+func NewPostgresDatabase(lc fx.Lifecycle, config common.PostgresDatabaseConfig) *PostgresDatabase {
 	logrus.Info("connecting to postgres")
 	db, err := retryPostgres(3, 10*time.Second, func() (db *sql.DB, e error) {
 		return sql.Open("postgres", config.ConnectionString)
@@ -38,6 +39,15 @@ func NewPostgresDatabase(config common.PostgresDatabaseConfig) *PostgresDatabase
 	}
 	logrus.Info("connected to postgres")
 	psqldb := &PostgresDatabase{db}
+
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			logrus.Info("closing connection for postgres")
+			db.Close()
+			return nil
+		},
+	})
+
 	migrateDB(config)
 
 	return psqldb
@@ -52,6 +62,7 @@ func migrateDB(config common.PostgresDatabaseConfig) {
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to get driver to migrate")
 	}
+
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://migrations",
 		"mind", driver)

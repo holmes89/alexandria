@@ -36,6 +36,7 @@ func NewApp() *fx.App {
 		fx.Provide(
 			config.LoadBucketConfig,
 			config.LoadPostgresDatabaseConfig,
+			config.LoadNeo4jConfig,
 			common.NewGCPBucketStorage,
 			common.NewBucketDocumentStorage,
 			common.NewBackupStorage,
@@ -45,6 +46,7 @@ func NewApp() *fx.App {
 			links.NewService,
 			backup.NewService,
 			database.NewPostgresDatabase,
+			database.NewNeo4jDatabase,
 			database.NewPostgresDocumentRepository,
 			database.NewUserPostgresRepository,
 			database.NewJournalRepository,

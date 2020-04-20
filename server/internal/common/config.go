@@ -33,6 +33,21 @@ func (c *Config) LoadPostgresDatabaseConfig() PostgresDatabaseConfig {
 	}
 }
 
+type Neo4jConfig struct {
+	URI      string
+	Username string
+	Password string
+}
+
+func (c *Config) LoadNeo4jConfig() Neo4jConfig {
+
+	return Neo4jConfig{
+		URI:      GetEnv("GRAPH_URL", "bolt://graph-db:7687"),
+		Username: GetEnv("GRAPH_USERNAME", "neo4j"),
+		Password: GetEnv("GRAPH_PASSWORD", "test"),
+	}
+}
+
 type BucketConfig struct {
 	ConnectionString string
 	AccessID         string
