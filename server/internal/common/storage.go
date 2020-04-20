@@ -27,9 +27,18 @@ type DocumentGet interface {
 	List(ctx context.Context) <-chan string
 }
 
+type BackupReader interface {
+	Reader(ctx context.Context, path string) (io.ReadCloser, error)
+}
+
 type DocumentStorage interface {
 	DocumentSave
 	DocumentGet
+}
+
+type BackupStorage interface {
+	BackupSave
+	BackupReader
 }
 
 type BucketStorage struct {
@@ -99,7 +108,7 @@ func NewBucketDocumentStorage(storage *BucketStorage) DocumentStorage {
 	return storage
 }
 
-func NewBackupStorage(storage *BucketStorage) BackupSave {
+func NewBackupStorage(storage *BucketStorage) BackupStorage {
 	return storage
 }
 
@@ -127,6 +136,10 @@ func (s *BucketStorage) Get(ctx context.Context, path string) (string, error) {
 		Method: "GET",
 	}
 	return s.Bucket.SignedURL(ctx, path, opts)
+}
+
+func (s *BucketStorage) Reader(ctx context.Context, path string) (io.ReadCloser, error) {
+	return s.Bucket.NewReader(ctx, path, nil)
 }
 
 func (s *BucketStorage) List(ctx context.Context) <-chan string {

@@ -2,7 +2,6 @@ package backup
 
 import (
 	"alexandria/internal/common"
-	"alexandria/internal/database"
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
 	"alexandria/internal/links"
@@ -10,30 +9,29 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/fx"
 	"golang.org/x/sync/errgroup"
 	"time"
 )
 
-type runner struct {
-	ticker        *time.Ticker
-	documentsRepo documents.DocumentRepository
-	journalRepo   journal.Repository
-	linksRepo     links.Repository
-	tagsRepo      tags.Repository
-	storage       common.BackupSave
+type service struct {
+	backupRepo Repository
+	storage    common.BackupStorage
 }
 
-var fileName = common.GetEnv("BACKUP_FILE", "backup.json")
+type runner struct {
+	service Service
+	ticker  *time.Ticker
+}
 
-func NewBackupRunner(lc fx.Lifecycle, db *database.PostgresDatabase, storage common.BackupSave) {
+var fileNameBase = common.GetEnv("BACKUP_FILE", "backups/backup")
+
+func NewBackupRunner(lc fx.Lifecycle, s Service) {
 	r := &runner{
-		documentsRepo: db,
-		journalRepo:   db,
-		linksRepo:     db,
-		tagsRepo:      db,
-		storage:       storage,
+		service: s,
 	}
 
 	lc.Append(fx.Hook{
@@ -50,66 +48,146 @@ func NewBackupRunner(lc fx.Lifecycle, db *database.PostgresDatabase, storage com
 	})
 }
 
-type backup struct {
+type Service interface {
+	Backup() error
+	Restore(id string, restoreType Restore) error
+}
+
+type Repository interface {
+	tags.Repository
+	documents.DocumentRepository
+	links.Repository
+	journal.Repository
+	Restore(b Backup) error
+}
+
+type Restore string
+
+const (
+	RestoreAll      Restore = "all"
+	RestoreUnknown  Restore = "unknown"
+	RestorePostgres Restore = "postgres"
+	RestoreGraph    Restore = "graph"
+)
+
+func ParseRestore(req string) Restore {
+	switch req {
+	case "":
+		return RestoreAll
+	case "postgres":
+		return RestorePostgres
+	case "graph":
+		return RestoreGraph
+	default:
+		return RestoreUnknown
+	}
+}
+
+func NewService(db Repository, storage common.BackupStorage) Service {
+	return &service{
+		backupRepo: db,
+		storage:    storage,
+	}
+}
+
+type Backup struct {
 	Docs    []*documents.Document `json:"documents"`
 	Journal []journal.Entry       `json:"journal_entries"`
 	Links   []links.Link          `json:"links"`
 	Tags    []tags.Tag            `json:"tags"`
 }
 
-func (r *runner) backup() {
+func (r *service) Restore(id string, restoreType Restore) error {
+
+	fileName := fmt.Sprintf("%s-%s.json", fileNameBase, id)
+	f, err := r.storage.Reader(context.Background(), fileName)
+	if err != nil {
+		logrus.WithError(err).Error("unable to fetch file")
+		return errors.New("unable to download file")
+	}
+	defer f.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(f); err != nil {
+		logrus.WithError(err).Error("unable to read file")
+		return errors.New("unable to read file")
+	}
+
+	b := Backup{}
+	if err := json.Unmarshal(buf.Bytes(), &b); err != nil {
+		logrus.WithError(err).Error("unable to unmarshal file")
+		return errors.New("unable to unmarshal file")
+	}
+
+	if err := r.backupRepo.Restore(b); err != nil {
+		logrus.WithError(err).Error("unable to populate database")
+		return errors.New("unable to populate database")
+	}
+
+	logrus.WithField("id", id).Info("backup restored")
+	return nil
+}
+func (r *service) Backup() error {
 	egroup, ctx := errgroup.WithContext(context.Background())
 
-	b := &backup{}
+	b := &Backup{}
 	egroup.Go(func() error {
-		docs, err := r.documentsRepo.FindAll(ctx, nil)
+		docs, err := r.backupRepo.FindAll(ctx, nil)
 		b.Docs = docs
 		return err
 	})
 
 	egroup.Go(func() error {
-		entries, err := r.journalRepo.FindAllEntries()
+		entries, err := r.backupRepo.FindAllEntries()
 		b.Journal = entries
 		return err
 	})
 
 	egroup.Go(func() error {
-		l, err := r.linksRepo.FindAllLinks()
+		l, err := r.backupRepo.FindAllLinks()
 		b.Links = l
 		return err
 	})
 
 	egroup.Go(func() error {
-		l, err := r.tagsRepo.FindAllTags()
+		l, err := r.backupRepo.FindAllTags()
 		b.Tags = l
 		return err
 	})
 
 	if err := egroup.Wait(); err != nil {
-		logrus.WithError(err).Fatal("unable to backup")
+		logrus.WithError(err).Error("unable to pull data from repositories")
+		return errors.New("unable to pull data from repositories")
 	}
 
 	marshalled, err := json.Marshal(b)
 	if err != nil {
-		logrus.WithError(err).Fatal("unable to marshall backup")
+		logrus.WithError(err).Error("unable to marshall Backup")
+		return errors.New("unable to marshall Backup")
 	}
 
+	fileName := fmt.Sprintf("%s-%d.json", fileNameBase, time.Now().Unix())
 	location, err := r.storage.Save(context.Background(), fileName, bytes.NewReader(marshalled))
 	if err != nil {
-		logrus.WithError(err).Fatal("unable to send to bucket")
+		logrus.WithError(err).Error("unable to send to bucket")
+		return errors.New("unable to persist file")
 	}
 
-	logrus.WithField("location", location).Info("backup successful")
-
+	logrus.WithField("location", location).Info("Backup successful")
+	return nil
 }
 
 func (r *runner) start() {
-	r.ticker = time.NewTicker(8 * time.Minute) // 15 minute cool down so we want to backup at least once
+	r.ticker = time.NewTicker(8 * time.Minute) // 15 minute cool down so we want to Backup at least once
 	go func() {
 		for {
 			select {
 			case <-r.ticker.C:
-				go r.backup()
+				go func() {
+					if err := r.service.Backup(); err != nil {
+						logrus.Fatal("unable to Backup")
+					}
+				}()
 			}
 		}
 	}()

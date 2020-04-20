@@ -17,7 +17,7 @@ services:
       JWT_SECRET: "test"
       DEFAULT_USER: "holmes89"
       DEFAULT_PASSWORD: "password"
-      BACKUP_FILE: "backup_local.json"
+      # BACKUP_FILE: "backup_local.json"
     ports:
       - 8081:8080
     volumes:

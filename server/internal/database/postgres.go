@@ -1,6 +1,7 @@
 package database
 
 import (
+	"alexandria/internal/backup"
 	"alexandria/internal/common"
 	"alexandria/internal/documents"
 	"alexandria/internal/journal"
@@ -405,6 +406,158 @@ func (r *PostgresDatabase) RemoveResourceTag(resourceID string, tagName string) 
 	return nil
 }
 
+func (r *PostgresDatabase) Restore(b backup.Backup) error {
+
+	tx, err := r.conn.BeginTx(context.Background(), nil)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create transaction")
+		return errors.New("unable to create transaction")
+	}
+
+	if err := r.bulkInsertTags(tx, b.Tags); err != nil {
+		logrus.WithError(err).Error("unable to insert tags")
+		tx.Rollback()
+		return errors.New("unable to insert tags")
+	}
+	if err := r.bulkInsertEntries(tx, b.Journal); err != nil {
+		logrus.WithError(err).Error("unable to insert entries")
+		tx.Rollback()
+		return errors.New("unable to insert entries")
+	}
+
+	docsTrs, err := r.bulkInsertDocuments(tx, b.Docs)
+	if err != nil {
+		logrus.WithError(err).Error("unable to insert tags")
+		tx.Rollback()
+		return errors.New("unable to insert tags")
+	}
+
+	linksTrs, err := r.bulkInsertLinks(tx, b.Links)
+	if err != nil {
+		logrus.WithError(err).Error("unable to insert tags")
+		tx.Rollback()
+		return errors.New("unable to insert tags")
+	}
+
+	trs := append(docsTrs, linksTrs...)
+	if err := r.bulkInsertTaggedResources(tx, trs); err != nil {
+		logrus.WithError(err).Error("unable to insert tags")
+		tx.Rollback()
+		return errors.New("unable to insert tags")
+	}
+
+	if err := tx.Commit(); err != nil {
+		logrus.WithError(err).Error("unable to commit transaction")
+		return errors.New("unable to commit transaction")
+	}
+	return nil
+}
+
+func (r *PostgresDatabase) bulkInsertTags(tx *sql.Tx, tags []tags.Tag) error {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	s := ps.Insert("tags").Columns("id", "display_name", "color")
+
+	for _, t := range tags {
+		s = s.Values(t.ID, t.DisplayName, t.TagColor)
+	}
+
+	if _, err := s.RunWith(tx).Exec(); err != nil {
+		logrus.WithError(err).Error("unable to insert tags")
+		return errors.New("unable to insert tags")
+	}
+
+	return nil
+}
+
+func (r *PostgresDatabase) bulkInsertTaggedResources(tx *sql.Tx, tags []tags.TaggedResource) error {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	s := ps.Insert("tagged_resources").Columns("id", "resource_id", "resource_type")
+
+	for _, t := range tags {
+		s = s.Values(t.ID, t.ResourceID, t.Type)
+	}
+
+	if _, err := s.RunWith(tx).Exec(); err != nil {
+		logrus.WithError(err).Error("unable to insert tagged resources")
+		return errors.New("unable to insert tagged resources")
+	}
+
+	return nil
+}
+
+func (r *PostgresDatabase) bulkInsertDocuments(tx *sql.Tx, docs []*documents.Document) (tr []tags.TaggedResource, err error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	s := ps.Insert("documents").Columns("id", "description", "display_name", "name", "type", "path")
+	for _, d := range docs {
+
+		for _, t := range d.Tags {
+			ty := tags.BookResource
+			if d.Type == "paper" {
+				ty = tags.PaperResource
+			}
+			tr = append(tr, tags.TaggedResource{
+				ID:         t,
+				ResourceID: d.ID,
+				Type:       ty,
+			})
+		}
+
+		s = s.Values(d.ID, d.Description, d.DisplayName, d.Name, d.Type, d.Path)
+	}
+
+	if _, err := s.RunWith(tx).Exec(); err != nil {
+		logrus.WithError(err).Error("unable to insert docs")
+		return tr, errors.New("unable to insert docs")
+	}
+
+	return tr, nil
+}
+
+func (r *PostgresDatabase) bulkInsertEntries(tx *sql.Tx, entries []journal.Entry) error {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	s := ps.Insert("journal_entry").Columns("id", "content")
+
+	for _, e := range entries {
+		s = s.Values(e.ID, e.Content)
+	}
+
+	if _, err := s.RunWith(tx).Exec(); err != nil {
+		logrus.WithError(err).Error("unable to insert entries")
+		return errors.New("unable to insert entries")
+	}
+
+	return nil
+}
+
+func (r *PostgresDatabase) bulkInsertLinks(tx *sql.Tx, lks []links.Link) (tr []tags.TaggedResource, err error) {
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	s := ps.Insert("links").Columns("id", "link", "icon_path", "display_name")
+	for _, l := range lks {
+
+		for _, t := range l.Tags {
+			tr = append(tr, tags.TaggedResource{
+				ID:         t,
+				ResourceID: l.ID,
+				Type:       tags.LinksResource,
+			})
+		}
+
+		s = s.Values(l.ID, l.Link, l.IconPath, l.DisplayName)
+	}
+
+	if _, err := s.RunWith(tx).Exec(); err != nil {
+		logrus.WithError(err).Error("unable to insert links")
+		return tr, errors.New("unable to insert links")
+	}
+
+	return tr, nil
+}
+
 func NewPostgresDocumentRepository(database *PostgresDatabase) documents.DocumentRepository {
 	return database
 }
@@ -422,5 +575,9 @@ func NewLinksRepository(database *PostgresDatabase) links.Repository {
 }
 
 func NewTagsRepository(database *PostgresDatabase) tags.Repository {
+	return database
+}
+
+func NewBackupRepository(database *PostgresDatabase) backup.Repository {
 	return database
 }
