@@ -23,11 +23,15 @@ EXPOSE 8080
 RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-w -X main.docker=true" --tags "seabolt_static" -o server cmd/*.go
 CMD ["./server"]
 
-FROM base AS prod
+FROM alpine AS prod
+RUN apk update \
+    && apk upgrade \
+    && apk add ca-certificates openssl-libs-static openssl-dev \
+    && rm -rf /var/cache/apk/*
+
 WORKDIR /
 ENV PORT 8080
 EXPOSE 8080
 COPY --from=build-env /alexandria/server /
 COPY --from=build-env /alexandria/migrations /migrations
-COPY --from=build-env /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 CMD ["/server"]
