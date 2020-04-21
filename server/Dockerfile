@@ -1,11 +1,15 @@
-FROM golang:1.14-buster AS deps
-RUN apt-get update \
-    && apt-get install -y git gcc musl-dev ca-certificates libssl1.1 wget \
-    && wget https://github.com/neo4j-drivers/seabolt/releases/download/v1.7.4/seabolt-1.7.4-Linux-ubuntu-18.04.deb \
-    && dpkg -i seabolt-1.7.4-Linux-ubuntu-18.04.deb \
-    && rm seabolt-1.7.4-Linux-ubuntu-18.04.deb \
-    && apt-get clean
+FROM golang:1.14-alpine AS base
+RUN apk update \
+    && apk upgrade \
+    && apk add git gcc musl-dev ca-certificates openssl-libs-static cmake make g++ openssl-dev \
+    && rm -rf /var/cache/apk/*
 
+# Install seabolt
+RUN git clone -b 1.7 https://github.com/neo4j-drivers/seabolt.git /seabolt
+WORKDIR /seabolt/build
+RUN cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_LIBDIR=lib .. && cmake --build . --target install
+
+FROM base as deps
 WORKDIR "/alexandria"
 ADD server/*.mod server/*.sum ./
 RUN go mod download
@@ -16,9 +20,11 @@ ADD server/internal ./internal
 ADD server/migrations ./migrations
 ENV PORT 8080
 EXPOSE 8080
-RUN GOOS=linux go build -ldflags "-w -X main.docker=true" -o server cmd/*.go
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags "-w -X main.docker=true" --tags "seabolt_static" -o server cmd/*.go
+CMD ["./server"]
 
-FROM scratch AS prod
+FROM base AS prod
+WORKDIR /
 ENV PORT 8080
 EXPOSE 8080
 COPY --from=build-env /alexandria/server /

@@ -43,8 +43,7 @@ func NewPostgresDatabase(lc fx.Lifecycle, config common.PostgresDatabaseConfig) 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			logrus.Info("closing connection for postgres")
-			db.Close()
-			return nil
+			return db.Close()
 		},
 	})
 
@@ -586,9 +585,5 @@ func NewLinksRepository(database *PostgresDatabase) links.Repository {
 }
 
 func NewTagsRepository(database *PostgresDatabase) tags.Repository {
-	return database
-}
-
-func NewBackupRepository(database *PostgresDatabase) backup.Repository {
 	return database
 }
