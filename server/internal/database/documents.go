@@ -26,7 +26,10 @@ func (r *documentsRepo) FindByID(ctx context.Context, id string) (*documents.Doc
 }
 
 func (r *documentsRepo) Insert(ctx context.Context, document *documents.Document) error {
-	return r.postgres.Insert(ctx, document)
+	if err := r.postgres.Insert(ctx, document); err != nil {
+		return err
+	}
+	return r.neo.Insert(ctx, document)
 }
 
 func (r *documentsRepo) Delete(ctx context.Context, id string) error {

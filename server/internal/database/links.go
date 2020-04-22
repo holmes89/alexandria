@@ -23,5 +23,9 @@ func (r *linksRepo) FindLinkByID(id string) (links.Link, error) {
 }
 
 func (r *linksRepo) CreateLink(l links.Link) (links.Link, error) {
-	return r.postgres.CreateLink(l)
+	nl, err := r.postgres.CreateLink(l)
+	if err != nil {
+		return l, err
+	}
+	return r.postgres.CreateLink(nl)
 }

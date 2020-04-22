@@ -3,6 +3,9 @@ package database
 import (
 	"alexandria/internal/backup"
 	"alexandria/internal/common"
+	"alexandria/internal/documents"
+	"alexandria/internal/links"
+	"alexandria/internal/tags"
 	"context"
 	"errors"
 	"fmt"
@@ -60,11 +63,7 @@ func (r *Neo4jDatabase) Restore(b backup.Backup) error {
 
 	// Create tag nodes
 	for _, tag := range b.Tags {
-		if _, err := sess.Run("CREATE (n:Tag { id: $id, display_name: $display_name, color: $color })", map[string]interface{}{
-			"id":           tag.ID,
-			"display_name": tag.DisplayName,
-			"color":        tag.TagColor,
-		}); err != nil {
+		if _, err := r.CreateTag(tag); err != nil {
 			logrus.WithError(err).Error("unable to create tag nodes")
 			return errors.New("unable to create tag node")
 		}
@@ -72,69 +71,201 @@ func (r *Neo4jDatabase) Restore(b backup.Backup) error {
 
 	// Create Documents
 	for _, doc := range b.Docs {
+		resourceType := tags.BookResource
 		if doc.Type == "paper" {
-			if _, err := sess.Run("CREATE (n:Paper { id: $id, display_name: $display_name, path: $path, name: $name, description: $description}) ", map[string]interface{}{
-				"id":           doc.ID,
-				"display_name": doc.DisplayName,
-				"path":         doc.Path,
-				"name":         doc.Name,
-				"description":  doc.Description,
-			}); err != nil {
-				logrus.WithError(err).Error("unable to create paper nodes")
-				return errors.New("unable to create paper node")
-			}
-			for _, tag := range doc.Tags {
-				if _, err := sess.Run("MATCH (a:Paper),(b:Tag) WHERE a.id = $paperID AND b.id = $tagID CREATE (a)-[r:HAS_TAG]->(b)", map[string]interface{}{
-					"paperID": doc.ID,
-					"tagID":   tag,
-				}); err != nil {
-					logrus.WithError(err).Error("unable to create paper tag edge")
-					return errors.New("unable to create paper tag edge")
-				}
-			}
-		} else {
-			if _, err := sess.Run("CREATE (n:Book { id: $id, display_name: $display_name, path: $path, name: $name, description: $description })", map[string]interface{}{
-				"id":           doc.ID,
-				"display_name": doc.DisplayName,
-				"path":         doc.Path,
-				"name":         doc.Name,
-				"description":  doc.Description,
-			}); err != nil {
-				logrus.WithError(err).Error("unable to create book nodes")
-				return errors.New("unable to create book node")
-			}
-			for _, tag := range doc.Tags {
-				if _, err := sess.Run("MATCH (a:Book),(b:Tag) WHERE a.id = $paperID AND b.id = $tagID CREATE (a)-[r:HAS_TAG]->(b)", map[string]interface{}{
-					"paperID": doc.ID,
-					"tagID":   tag,
-				}); err != nil {
-					logrus.WithError(err).Error("unable to create book tag edge")
-					return errors.New("unable to create book tag edge")
-				}
+			resourceType = tags.PaperResource
+		}
+		if err := r.Insert(context.Background(), doc); err != nil {
+			logrus.WithError(err).Error("unable to create document nodes")
+			return errors.New("unable to create document node")
+		}
+		for _, tag := range doc.Tags {
+			if err := r.addResourceTagByID(doc.ID, resourceType, tag); err != nil {
+				logrus.WithError(err).Error("unable to create document tag edge")
+				return errors.New("unable to create document tag edge")
 			}
 		}
 	}
 
 	// Links
 	for _, link := range b.Links {
-		if _, err := sess.Run("CREATE (n:Link { id: $id, display_name: $display_name, link: $link, icon_path: $icon_path })", map[string]interface{}{
-			"id":           link.ID,
-			"display_name": link.DisplayName,
-			"link":         link.Link,
-			"icon_path":    link.IconPath,
-		}); err != nil {
+		if _, err := r.CreateLink(link); err != nil {
 			logrus.WithError(err).Error("unable to create link nodes")
 			return errors.New("unable to create link node")
 		}
 		for _, tag := range link.Tags {
-			if _, err := sess.Run("MATCH (a:Link),(b:Tag) WHERE a.id = $linkID AND b.id = $tagID CREATE (a)-[r:HAS_TAG]->(b)", map[string]interface{}{
-				"linkID": link.ID,
-				"tagID":  tag,
-			}); err != nil {
+			if err := r.addResourceTagByID(link.ID, tags.LinksResource, tag); err != nil {
 				logrus.WithError(err).Error("unable to create link tag edge")
 				return errors.New("unable to create link tag edge")
 			}
 		}
 	}
 	return nil
+}
+
+func (r *Neo4jDatabase) CreateLink(entity links.Link) (links.Link, error) {
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return entity, errors.New("unable to create session")
+	}
+	defer sess.Close()
+
+	if _, err := sess.Run("CREATE (n:Link { id: $id, display_name: $display_name, link: $link, icon_path: $icon_path })", map[string]interface{}{
+		"id":           entity.ID,
+		"display_name": entity.DisplayName,
+		"link":         entity.Link,
+		"icon_path":    entity.IconPath,
+	}); err != nil {
+		logrus.WithError(err).Error("unable to create link nodes")
+		return entity, errors.New("unable to create link node")
+	}
+
+	return entity, nil
+}
+
+func (r *Neo4jDatabase) Insert(ctx context.Context, entity *documents.Document) error {
+	if entity.Type == "paper" {
+		return r.insertPaper(ctx, entity)
+	} else {
+		return r.insertBook(ctx, entity)
+	}
+
+}
+
+func (r *Neo4jDatabase) insertBook(_ context.Context, entity *documents.Document) error {
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return errors.New("unable to create session")
+	}
+	defer sess.Close()
+	if _, err := sess.Run("CREATE (n:Book { id: $id, display_name: $display_name, path: $path, name: $name, description: $description })", map[string]interface{}{
+		"id":           entity.ID,
+		"display_name": entity.DisplayName,
+		"path":         entity.Path,
+		"name":         entity.Name,
+		"description":  entity.Description,
+	}); err != nil {
+		logrus.WithError(err).Error("unable to create book nodes")
+		return errors.New("unable to create book node")
+	}
+	return nil
+}
+
+func (r *Neo4jDatabase) insertPaper(_ context.Context, entity *documents.Document) error {
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return errors.New("unable to create session")
+	}
+
+	defer sess.Close()
+	if _, err := sess.Run("CREATE (n:Paper { id: $id, display_name: $display_name, path: $path, name: $name, description: $description}) ", map[string]interface{}{
+		"id":           entity.ID,
+		"display_name": entity.DisplayName,
+		"path":         entity.Path,
+		"name":         entity.Name,
+		"description":  entity.Description,
+	}); err != nil {
+		logrus.WithError(err).Error("unable to create paper nodes")
+		return errors.New("unable to create paper node")
+	}
+
+	return nil
+}
+
+func (r *Neo4jDatabase) CreateTag(entity tags.Tag) (tags.Tag, error) {
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return entity, errors.New("unable to create session")
+	}
+	defer sess.Close()
+
+	// Create tag nodes
+	if _, err := sess.Run("CREATE (n:Tag { id: $id, display_name: $display_name, color: $color })", map[string]interface{}{
+		"id":           entity.ID,
+		"display_name": entity.DisplayName,
+		"color":        entity.TagColor,
+	}); err != nil {
+		logrus.WithError(err).Error("unable to create tag nodes")
+		return entity, errors.New("unable to create tag node")
+	}
+
+	return entity, nil
+}
+
+func (r *Neo4jDatabase) AddResourceTag(resourceID string, resourceType tags.ResourceType, tagName string) error {
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return errors.New("unable to create session")
+	}
+	defer sess.Close()
+
+	nodeType := getNodeType(resourceType)
+	cypher := fmt.Sprintf("MATCH (a:%s),(b:Tag) WHERE a.id = $resourceID AND b.display_name = $tagName CREATE (a)-[r:HAS_TAG]->(b)", nodeType)
+	if _, err := sess.Run(cypher, map[string]interface{}{
+		"resourceID": resourceID,
+		"tagName":    tagName,
+	}); err != nil {
+		logrus.WithError(err).Error("unable to create tag edge")
+		return errors.New("unable to create tag edge")
+	}
+
+	return nil
+}
+
+func (r *Neo4jDatabase) addResourceTagByID(resourceID string, resourceType tags.ResourceType, tagID string) error {
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return errors.New("unable to create session")
+	}
+	defer sess.Close()
+
+	nodeType := getNodeType(resourceType)
+	cypher := fmt.Sprintf("MATCH (a:%s),(b:Tag) WHERE a.id = $resourceID AND b.id = $tagID CREATE (a)-[r:HAS_TAG]->(b)", nodeType)
+	if _, err := sess.Run(cypher, map[string]interface{}{
+		"resourceID": resourceID,
+		"tagID":      tagID,
+	}); err != nil {
+		logrus.WithError(err).Error("unable to create tag edge by id")
+		return errors.New("unable to create tag edge by id")
+	}
+
+	return nil
+}
+
+func (r *Neo4jDatabase) RemoveResourceTag(resourceID string, tagName string) error {
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return errors.New("unable to create session")
+	}
+	defer sess.Close()
+
+	if _, err := sess.Run("MATCH (a),(b:Tag) WHERE a.id = $linkID AND b.display_name = $tagName CREATE (a)-[r:HAS_TAG]->(b)", map[string]interface{}{
+		"resourceID": resourceID,
+		"tagName":    tagName,
+	}); err != nil {
+		logrus.WithError(err).Error("unable to delete tag edge")
+		return errors.New("unable to delete tag edge")
+	}
+
+	return nil
+}
+
+func getNodeType(resourceType tags.ResourceType) string {
+	switch resourceType {
+	case tags.LinksResource:
+		return "Link"
+	case tags.BookResource:
+		return "Book"
+	case tags.PaperResource:
+		return "Paper"
+	default:
+		return "Unknown"
+	}
 }
