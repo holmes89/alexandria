@@ -568,22 +568,10 @@ func (r *PostgresDatabase) bulkInsertLinks(tx *sql.Tx, lks []links.Link) (tr []t
 	return tr, nil
 }
 
-func NewPostgresDocumentRepository(database *PostgresDatabase) documents.DocumentRepository {
-	return database
-}
-
 func NewUserPostgresRepository(database *PostgresDatabase) user.Repository {
 	return database
 }
 
 func NewJournalRepository(database *PostgresDatabase) journal.Repository {
-	return database
-}
-
-func NewLinksRepository(database *PostgresDatabase) links.Repository {
-	return database
-}
-
-func NewTagsRepository(database *PostgresDatabase) tags.Repository {
 	return database
 }

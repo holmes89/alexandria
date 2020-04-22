@@ -47,7 +47,7 @@ func NewApp() *fx.App {
 			papers.NewPaperService,
 			links.NewService,
 			backup.NewService,
-			database.NewPostgresDocumentRepository,
+			database.NewDocumentRepository,
 			database.NewUserPostgresRepository,
 			database.NewJournalRepository,
 			database.NewLinksRepository,
