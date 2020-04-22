@@ -178,7 +178,7 @@ func (r *service) Backup() error {
 }
 
 func (r *runner) start() {
-	r.ticker = time.NewTicker(8 * time.Minute) // 15 minute cool down so we want to Backup at least once
+	r.ticker = time.NewTicker(1 * time.Hour)
 	go func() {
 		for {
 			select {
