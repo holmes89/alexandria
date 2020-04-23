@@ -20,6 +20,7 @@ import (
 	"github.com/iancoleman/strcase"
 	_ "github.com/lib/pq" // Used for specifying the type client we are creating
 	"github.com/sirupsen/logrus"
+	"go.uber.org/fx"
 	"strings"
 	"time"
 )
@@ -28,7 +29,7 @@ type PostgresDatabase struct {
 	conn *sql.DB
 }
 
-func NewPostgresDatabase(config common.PostgresDatabaseConfig) *PostgresDatabase {
+func NewPostgresDatabase(lc fx.Lifecycle, config common.PostgresDatabaseConfig) *PostgresDatabase {
 	logrus.Info("connecting to postgres")
 	db, err := retryPostgres(3, 10*time.Second, func() (db *sql.DB, e error) {
 		return sql.Open("postgres", config.ConnectionString)
@@ -38,6 +39,14 @@ func NewPostgresDatabase(config common.PostgresDatabaseConfig) *PostgresDatabase
 	}
 	logrus.Info("connected to postgres")
 	psqldb := &PostgresDatabase{db}
+
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			logrus.Info("closing connection for postgres")
+			return db.Close()
+		},
+	})
+
 	migrateDB(config)
 
 	return psqldb
@@ -52,6 +61,7 @@ func migrateDB(config common.PostgresDatabaseConfig) {
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to get driver to migrate")
 	}
+
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://migrations",
 		"mind", driver)
@@ -384,6 +394,24 @@ func (r *PostgresDatabase) CreateTag(entry tags.Tag) (tags.Tag, error) {
 	return newEntry, nil
 }
 
+func (r *PostgresDatabase) GetTagByName(name string) (entity tags.Tag, err error) {
+	name = strcase.ToKebab(name)
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	if err := ps.Select("id", "display_name", "color").
+		From("tags").
+		Where(sq.Eq{"display_name": name}).
+		RunWith(r.conn).
+		QueryRow().
+		Scan(&entity.ID, &entity.DisplayName, &entity.TagColor); err != nil {
+		if err == sql.ErrNoRows {
+			return entity, nil
+		}
+		logrus.WithError(err).Error("unable to insert tag")
+		return entity, errors.New("unable to insert tag")
+	}
+	return entity, nil
+}
+
 func (r *PostgresDatabase) AddResourceTag(resourceID string, resourceType tags.ResourceType, tagName string) error {
 	tagName = strcase.ToKebab(tagName)
 	if _, err := r.CreateTag(tags.Tag{DisplayName: tagName}); err != nil {
@@ -558,26 +586,10 @@ func (r *PostgresDatabase) bulkInsertLinks(tx *sql.Tx, lks []links.Link) (tr []t
 	return tr, nil
 }
 
-func NewPostgresDocumentRepository(database *PostgresDatabase) documents.DocumentRepository {
-	return database
-}
-
 func NewUserPostgresRepository(database *PostgresDatabase) user.Repository {
 	return database
 }
 
 func NewJournalRepository(database *PostgresDatabase) journal.Repository {
-	return database
-}
-
-func NewLinksRepository(database *PostgresDatabase) links.Repository {
-	return database
-}
-
-func NewTagsRepository(database *PostgresDatabase) tags.Repository {
-	return database
-}
-
-func NewBackupRepository(database *PostgresDatabase) backup.Repository {
 	return database
 }

@@ -54,10 +54,10 @@ type Service interface {
 }
 
 type Repository interface {
-	tags.Repository
-	documents.DocumentRepository
-	links.Repository
-	journal.Repository
+	FindAllTags() ([]tags.Tag, error)
+	FindAll(ctx context.Context, filter map[string]interface{}) ([]*documents.Document, error)
+	FindAllLinks() ([]links.Link, error)
+	FindAllEntries() ([]journal.Entry, error)
 	Restore(b Backup) error
 }
 
