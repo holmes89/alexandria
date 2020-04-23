@@ -22,11 +22,20 @@ type Neo4jDatabase struct {
 func NewNeo4jDatabase(lc fx.Lifecycle, config common.Neo4jConfig) *Neo4jDatabase {
 	logrus.Info("connecting to neo4j")
 
-	driver, err := retryNeo4j(3, 10*time.Second, func() (driver neo4j.Driver, e error) {
-		return neo4j.NewDriver(config.URI, neo4j.BasicAuth(config.Username, config.Password, ""), func(c *neo4j.Config) {
-			c.Encrypted = false
+	var driver neo4j.Driver
+	var err error
+	if config.Username == "neo4j" { //Assume if this is the password its local
+		driver, err = retryNeo4j(3, 10*time.Second, func() (driver neo4j.Driver, e error) {
+			return neo4j.NewDriver(config.URI, neo4j.BasicAuth(config.Username, config.Password, ""), , func(c *neo4j.Config) {
+				c.Encrypted = false
+			})
 		})
-	})
+	} else {
+		driver, err = retryNeo4j(3, 10*time.Second, func() (driver neo4j.Driver, e error) {
+			return neo4j.NewDriver(config.URI, neo4j.BasicAuth(config.Username, config.Password, ""))
+		})
+	}
+
 	if err != nil {
 		logrus.WithError(err).Fatal("unable to connect to neo4j")
 	}
