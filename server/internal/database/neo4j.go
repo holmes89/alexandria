@@ -26,7 +26,7 @@ func NewNeo4jDatabase(lc fx.Lifecycle, config common.Neo4jConfig) *Neo4jDatabase
 	var err error
 	if config.Username == "neo4j" { //Assume if this is the password its local
 		driver, err = retryNeo4j(3, 10*time.Second, func() (driver neo4j.Driver, e error) {
-			return neo4j.NewDriver(config.URI, neo4j.BasicAuth(config.Username, config.Password, ""), , func(c *neo4j.Config) {
+			return neo4j.NewDriver(config.URI, neo4j.BasicAuth(config.Username, config.Password, ""), func(c *neo4j.Config) {
 				c.Encrypted = false
 			})
 		})

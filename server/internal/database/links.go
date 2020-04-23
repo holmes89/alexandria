@@ -15,7 +15,7 @@ func NewLinksRepository(psql *PostgresDatabase, neo *Neo4jDatabase) links.Reposi
 }
 
 func (r *linksRepo) FindAllLinks() ([]links.Link, error) {
-	return r.FindAllLinks()
+	return r.postgres.FindAllLinks()
 }
 
 func (r *linksRepo) FindLinkByID(id string) (links.Link, error) {
