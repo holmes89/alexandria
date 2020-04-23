@@ -394,6 +394,24 @@ func (r *PostgresDatabase) CreateTag(entry tags.Tag) (tags.Tag, error) {
 	return newEntry, nil
 }
 
+func (r *PostgresDatabase) GetTagByName(name string) (entity tags.Tag, err error) {
+	name = strcase.ToKebab(name)
+	ps := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+	if err := ps.Select("id", "display_name", "color").
+		From("tags").
+		Where(sq.Eq{"display_name": name}).
+		RunWith(r.conn).
+		QueryRow().
+		Scan(&entity.ID, &entity.DisplayName, &entity.TagColor); err != nil {
+		if err == sql.ErrNoRows {
+			return entity, nil
+		}
+		logrus.WithError(err).Error("unable to insert tag")
+		return entity, errors.New("unable to insert tag")
+	}
+	return entity, nil
+}
+
 func (r *PostgresDatabase) AddResourceTag(resourceID string, resourceType tags.ResourceType, tagName string) error {
 	tagName = strcase.ToKebab(tagName)
 	if _, err := r.CreateTag(tags.Tag{DisplayName: tagName}); err != nil {

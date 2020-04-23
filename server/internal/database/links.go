@@ -27,5 +27,5 @@ func (r *linksRepo) CreateLink(l links.Link) (links.Link, error) {
 	if err != nil {
 		return l, err
 	}
-	return r.postgres.CreateLink(nl)
+	return r.neo.CreateLink(nl)
 }

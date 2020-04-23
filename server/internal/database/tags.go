@@ -31,13 +31,23 @@ func (r *tagsRepo) AddResourceTag(resourceID string, resourceType tags.ResourceT
 	if err := r.postgres.AddResourceTag(resourceID, resourceType, tagName); err != nil {
 		return err
 	}
-	// TODO create resource if not exists MERGE (p:Person{name:"Marina"})
-	return r.neo.AddResourceTag(resourceID, resourceType, tagName)
+	t, err := r.postgres.GetTagByName(tagName)
+	if err != nil {
+		return err
+	}
+	if _, err := r.neo.CreateTag(t); err != nil {
+		return err
+	}
+	return r.neo.AddResourceTag(resourceID, resourceType, t.DisplayName)
 }
 
 func (r *tagsRepo) RemoveResourceTag(resourceID string, tagName string) error {
+	t, err := r.postgres.GetTagByName(tagName)
+	if err != nil {
+		return err
+	}
 	if err := r.postgres.RemoveResourceTag(resourceID, tagName); err != nil {
 		return err
 	}
-	return r.neo.RemoveResourceTag(resourceID, tagName)
+	return r.neo.RemoveResourceTag(resourceID, t.ID)
 }

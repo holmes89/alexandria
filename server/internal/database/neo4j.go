@@ -184,7 +184,7 @@ func (r *Neo4jDatabase) CreateTag(entity tags.Tag) (tags.Tag, error) {
 	defer sess.Close()
 
 	// Create tag nodes
-	if _, err := sess.Run("CREATE (n:Tag { id: $id, display_name: $display_name, color: $color })", map[string]interface{}{
+	if _, err := sess.Run("MERGE (n:Tag { id: $id, display_name: $display_name, color: $color })", map[string]interface{}{
 		"id":           entity.ID,
 		"display_name": entity.DisplayName,
 		"color":        entity.TagColor,
@@ -246,7 +246,7 @@ func (r *Neo4jDatabase) RemoveResourceTag(resourceID string, tagName string) err
 	}
 	defer sess.Close()
 
-	if _, err := sess.Run("MATCH (a),(b:Tag) WHERE a.id = $linkID AND b.display_name = $tagName CREATE (a)-[r:HAS_TAG]->(b)", map[string]interface{}{
+	if _, err := sess.Run("MATCH (a)-[r:HAS_TAG]->(b:Tag) WHERE a.id = $resourceID AND b.id = $tagID DELETE r", map[string]interface{}{
 		"resourceID": resourceID,
 		"tagName":    tagName,
 	}); err != nil {
