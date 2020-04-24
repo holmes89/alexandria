@@ -48,6 +48,10 @@ func NewBackupRunner(lc fx.Lifecycle, s Service) {
 	})
 }
 
+type SystemAggregator interface {
+	AggregateAllData() (Backup, error)
+}
+
 type Service interface {
 	Backup() error
 	Restore(id string, restoreType Restore) error
@@ -90,6 +94,12 @@ func NewService(db Repository, storage common.BackupStorage) Service {
 	}
 }
 
+func NewSystemAggregator(db Repository) SystemAggregator {
+	return &service{
+		backupRepo: db,
+	}
+}
+
 type Backup struct {
 	Docs    []*documents.Document `json:"documents"`
 	Journal []journal.Entry       `json:"journal_entries"`
@@ -127,7 +137,8 @@ func (r *service) Restore(id string, restoreType Restore) error {
 	logrus.WithField("id", id).Info("backup restored")
 	return nil
 }
-func (r *service) Backup() error {
+
+func (r *service) AggregateAllData() (Backup, error) {
 	egroup, ctx := errgroup.WithContext(context.Background())
 
 	b := &Backup{}
@@ -157,9 +168,18 @@ func (r *service) Backup() error {
 
 	if err := egroup.Wait(); err != nil {
 		logrus.WithError(err).Error("unable to pull data from repositories")
-		return errors.New("unable to pull data from repositories")
+		return *b, errors.New("unable to pull data from repositories")
 	}
 
+	return *b, nil
+}
+
+func (r *service) Backup() error {
+	b, err := r.AggregateAllData()
+	if err != nil {
+		logrus.WithError(err).Error("unable to aggregate data")
+		return errors.New("unable to aggregate data")
+	}
 	marshalled, err := json.Marshal(b)
 	if err != nil {
 		logrus.WithError(err).Error("unable to marshall Backup")
