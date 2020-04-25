@@ -70,10 +70,10 @@ func (s *service) Create(entity Link) (linkEntity Link, err error) {
 	// Find the review items
 	title := doc.Find("title").First().Text()
 	icon, ok := doc.Find("link[rel='apple-touch-icon']").Attr("href")
-	if !ok {
+	if !ok || len(icon) >= 2048 {
 		logrus.Warn("unable to find apple-touch-icon looking for other icon")
 		icon, ok = doc.Find("link[rel='icon']").Attr("href")
-		if !ok {
+		if !ok || len(icon) >= 2048  {
 			logrus.Warn("unable to find icon looking for other icon")
 			icon, ok = doc.Find("link[rel='shortcut icon']").Attr("href")
 			if !ok {
