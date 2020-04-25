@@ -76,7 +76,7 @@ func (s *service) Create(entity Link) (linkEntity Link, err error) {
 		if !ok || len(icon) >= 2048  {
 			logrus.Warn("unable to find icon looking for other icon")
 			icon, ok = doc.Find("link[rel='shortcut icon']").Attr("href")
-			if !ok {
+			if !ok|| len(icon) >= 2048 {
 				icon = ""
 			}
 		}
