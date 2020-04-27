@@ -5,4 +5,5 @@ type Repository interface {
 	CreateTag(Tag) (Tag, error)
 	AddResourceTag(resourceID string, resourceType ResourceType, tagName string) error
 	RemoveResourceTag(resourceID string, tagName string) error
+	GetTaggedResources(id string) ([]TaggedResource, error)
 }

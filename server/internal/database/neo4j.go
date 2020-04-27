@@ -266,6 +266,44 @@ func (r *Neo4jDatabase) RemoveResourceTag(resourceID string, tagName string) err
 	return nil
 }
 
+func (r *Neo4jDatabase) GetTaggedResources(id string) ([]tags.TaggedResource, error) {
+	tr := []tags.TaggedResource{}
+	sess, err := r.conn.Session(neo4j.AccessModeWrite)
+	if err != nil {
+		logrus.WithError(err).Error("unable to create session")
+		return tr, errors.New("unable to create session")
+	}
+	defer sess.Close()
+
+	result, err := sess.Run("MATCH (a)-[r:HAS_TAG]->(b:Tag) WHERE b.id = $tagID RETURN a", map[string]interface{}{
+		"tagID": id,
+	})
+	if err != nil {
+		logrus.WithError(err).Error("unable to delete tag edge")
+		return tr, errors.New("unable to delete tag edge")
+	}
+
+	for result.Next() {
+		n, ok := result.Record().GetByIndex(0).(neo4j.Node)
+		if !ok {
+			logrus.Error("return not of node type")
+			return tr, errors.New("not node type")
+		}
+		p := n.Props()
+		t, err := getResourceType(n.Labels())
+		if err != nil {
+			logrus.WithError(err).Error("unable to find resource type")
+			return tr, errors.New("unable to find resource type")
+		}
+		tr = append(tr, tags.TaggedResource{
+			ResourceID:  p["id"].(string),
+			DisplayName: p["display_name"].(string),
+			Type:        t,
+		})
+	}
+	return tr, nil
+}
+
 func getNodeType(resourceType tags.ResourceType) string {
 	switch resourceType {
 	case tags.LinksResource:
@@ -277,4 +315,18 @@ func getNodeType(resourceType tags.ResourceType) string {
 	default:
 		return "Unknown"
 	}
+}
+
+func getResourceType(nodeTypes []string) (tags.ResourceType, error) {
+	for _, nodeType := range nodeTypes {
+		switch nodeType {
+		case "Link":
+			return tags.LinksResource, nil
+		case "Book":
+			return tags.BookResource, nil
+		case "Paper":
+			return tags.PaperResource, nil
+		}
+	}
+	return "", errors.New("invalid resource type")
 }

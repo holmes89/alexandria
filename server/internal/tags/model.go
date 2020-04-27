@@ -7,9 +7,10 @@ type Tag struct {
 }
 
 type TaggedResource struct {
-	ID         string
-	ResourceID string
-	Type       ResourceType
+	ID          string       `json:"-"`
+	ResourceID  string       `json:"id"`
+	DisplayName string       `json:"display_name"`
+	Type        ResourceType `json:"type"`
 }
 
 type ResourceType = string

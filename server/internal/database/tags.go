@@ -51,3 +51,7 @@ func (r *tagsRepo) RemoveResourceTag(resourceID string, tagName string) error {
 	}
 	return r.neo.RemoveResourceTag(resourceID, t.ID)
 }
+
+func (r *tagsRepo) GetTaggedResources(id string) ([]tags.TaggedResource, error) {
+	return r.neo.GetTaggedResources(id)
+}

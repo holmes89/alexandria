@@ -20,6 +20,7 @@ func MakeLinksHandler(mr *mux.Router, repo Repository) http.Handler {
 	}
 	r.HandleFunc("/", h.FindAll).Methods("GET")
 	r.HandleFunc("/", h.Create).Methods("POST")
+	r.HandleFunc("/{id}/resources/", h.GetTaggedResource).Methods("GET")
 
 	return r
 }
@@ -50,6 +51,22 @@ func (h *tagHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	entity, err := h.repo.CreateTag(entity)
+	if err != nil {
+		common.MakeError(w, http.StatusInternalServerError, "tags", "Server error", "create")
+		return
+	}
+
+	common.EncodeResponse(ctx, w, entity)
+}
+
+func (h *tagHandler) GetTaggedResource(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	id, _ := vars["id"]
+
+	entity, err := h.repo.GetTaggedResources(id)
 	if err != nil {
 		common.MakeError(w, http.StatusInternalServerError, "tags", "Server error", "create")
 		return
