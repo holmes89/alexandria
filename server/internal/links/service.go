@@ -1,6 +1,7 @@
 package links
 
 import (
+	"alexandria/internal/common"
 	"alexandria/internal/tags"
 	"errors"
 	"fmt"
@@ -73,10 +74,10 @@ func (s *service) Create(entity Link) (linkEntity Link, err error) {
 	if !ok || len(icon) >= 2048 {
 		logrus.Warn("unable to find apple-touch-icon looking for other icon")
 		icon, ok = doc.Find("link[rel='icon']").Attr("href")
-		if !ok || len(icon) >= 2048  {
+		if !ok || len(icon) >= 2048 {
 			logrus.Warn("unable to find icon looking for other icon")
 			icon, ok = doc.Find("link[rel='shortcut icon']").Attr("href")
-			if !ok|| len(icon) >= 2048 {
+			if !ok || len(icon) >= 2048 {
 				icon = ""
 			}
 		}
@@ -94,7 +95,7 @@ func (s *service) FindByID(id string) (Link, error) {
 	return s.repo.FindLinkByID(id)
 }
 func (s *service) AddTag(id string, tag string) error {
-	return s.tagsRepo.AddResourceTag(id, tags.LinksResource, tag)
+	return s.tagsRepo.AddResourceTag(id, common.LinksResource, tag)
 }
 
 func (s *service) RemoveTag(id string, tag string) error {

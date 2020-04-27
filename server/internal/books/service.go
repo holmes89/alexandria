@@ -1,6 +1,7 @@
 package books
 
 import (
+	"alexandria/internal/common"
 	"alexandria/internal/documents"
 	"alexandria/internal/tags"
 	"context"
@@ -60,7 +61,7 @@ func (s *service) Add(ctx context.Context, file multipart.File, book *documents.
 }
 
 func (s *service) AddTag(id string, tag string) error {
-	return s.tagsRepo.AddResourceTag(id, tags.BookResource, tag)
+	return s.tagsRepo.AddResourceTag(id, common.BookResource, tag)
 }
 
 func (s *service) RemoveTag(id string, tag string) error {

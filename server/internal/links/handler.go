@@ -137,5 +137,5 @@ func (h *linkHandler) RemoveTag(w http.ResponseWriter, r *http.Request) {
 }
 
 type tagRequest struct {
-	Tag string `json"tag"`
+	Tag string `json:"tag"`
 }

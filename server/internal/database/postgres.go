@@ -412,7 +412,7 @@ func (r *PostgresDatabase) GetTagByName(name string) (entity tags.Tag, err error
 	return entity, nil
 }
 
-func (r *PostgresDatabase) AddResourceTag(resourceID string, resourceType tags.ResourceType, tagName string) error {
+func (r *PostgresDatabase) AddResourceTag(resourceID string, resourceType common.ResourceType, tagName string) error {
 	tagName = strcase.ToKebab(tagName)
 	if _, err := r.CreateTag(tags.Tag{DisplayName: tagName}); err != nil {
 		logrus.WithError(err).Error("unable to upsert tag")
@@ -522,9 +522,9 @@ func (r *PostgresDatabase) bulkInsertDocuments(tx *sql.Tx, docs []*documents.Doc
 	for _, d := range docs {
 
 		for _, t := range d.Tags {
-			ty := tags.BookResource
+			ty := common.BookResource
 			if d.Type == "paper" {
-				ty = tags.PaperResource
+				ty = common.PaperResource
 			}
 			tr = append(tr, tags.TaggedResource{
 				ID:         t,
@@ -571,7 +571,7 @@ func (r *PostgresDatabase) bulkInsertLinks(tx *sql.Tx, lks []links.Link) (tr []t
 			tr = append(tr, tags.TaggedResource{
 				ID:         t,
 				ResourceID: l.ID,
-				Type:       tags.LinksResource,
+				Type:       common.LinksResource,
 			})
 		}
 

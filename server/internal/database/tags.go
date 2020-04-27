@@ -1,6 +1,7 @@
 package database
 
 import (
+	"alexandria/internal/common"
 	"alexandria/internal/tags"
 )
 
@@ -27,7 +28,7 @@ func (r *tagsRepo) CreateTag(tag tags.Tag) (tags.Tag, error) {
 	return r.neo.CreateTag(t)
 }
 
-func (r *tagsRepo) AddResourceTag(resourceID string, resourceType tags.ResourceType, tagName string) error {
+func (r *tagsRepo) AddResourceTag(resourceID string, resourceType common.ResourceType, tagName string) error {
 	if err := r.postgres.AddResourceTag(resourceID, resourceType, tagName); err != nil {
 		return err
 	}

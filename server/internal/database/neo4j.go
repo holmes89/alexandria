@@ -80,9 +80,9 @@ func (r *Neo4jDatabase) Restore(b backup.Backup) error {
 
 	// Create Documents
 	for _, doc := range b.Docs {
-		resourceType := tags.BookResource
+		resourceType := common.BookResource
 		if doc.Type == "paper" {
-			resourceType = tags.PaperResource
+			resourceType = common.PaperResource
 		}
 		if err := r.Insert(context.Background(), doc); err != nil {
 			logrus.WithError(err).Error("unable to create document nodes")
@@ -103,7 +103,7 @@ func (r *Neo4jDatabase) Restore(b backup.Backup) error {
 			return errors.New("unable to create link node")
 		}
 		for _, tag := range link.Tags {
-			if err := r.addResourceTagByID(link.ID, tags.LinksResource, tag); err != nil {
+			if err := r.addResourceTagByID(link.ID, common.LinksResource, tag); err != nil {
 				logrus.WithError(err).Error("unable to create link tag edge")
 				return errors.New("unable to create link tag edge")
 			}
@@ -205,7 +205,7 @@ func (r *Neo4jDatabase) CreateTag(entity tags.Tag) (tags.Tag, error) {
 	return entity, nil
 }
 
-func (r *Neo4jDatabase) AddResourceTag(resourceID string, resourceType tags.ResourceType, tagName string) error {
+func (r *Neo4jDatabase) AddResourceTag(resourceID string, resourceType common.ResourceType, tagName string) error {
 	sess, err := r.conn.Session(neo4j.AccessModeWrite)
 	if err != nil {
 		logrus.WithError(err).Error("unable to create session")
@@ -226,7 +226,7 @@ func (r *Neo4jDatabase) AddResourceTag(resourceID string, resourceType tags.Reso
 	return nil
 }
 
-func (r *Neo4jDatabase) addResourceTagByID(resourceID string, resourceType tags.ResourceType, tagID string) error {
+func (r *Neo4jDatabase) addResourceTagByID(resourceID string, resourceType common.ResourceType, tagID string) error {
 	sess, err := r.conn.Session(neo4j.AccessModeWrite)
 	if err != nil {
 		logrus.WithError(err).Error("unable to create session")
@@ -304,28 +304,28 @@ func (r *Neo4jDatabase) GetTaggedResources(id string) ([]tags.TaggedResource, er
 	return tr, nil
 }
 
-func getNodeType(resourceType tags.ResourceType) string {
+func getNodeType(resourceType common.ResourceType) string {
 	switch resourceType {
-	case tags.LinksResource:
+	case common.LinksResource:
 		return "Link"
-	case tags.BookResource:
+	case common.BookResource:
 		return "Book"
-	case tags.PaperResource:
+	case common.PaperResource:
 		return "Paper"
 	default:
 		return "Unknown"
 	}
 }
 
-func getResourceType(nodeTypes []string) (tags.ResourceType, error) {
+func getResourceType(nodeTypes []string) (common.ResourceType, error) {
 	for _, nodeType := range nodeTypes {
 		switch nodeType {
 		case "Link":
-			return tags.LinksResource, nil
+			return common.LinksResource, nil
 		case "Book":
-			return tags.BookResource, nil
+			return common.BookResource, nil
 		case "Paper":
-			return tags.PaperResource, nil
+			return common.PaperResource, nil
 		}
 	}
 	return "", errors.New("invalid resource type")

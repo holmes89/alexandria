@@ -1,5 +1,7 @@
 package tags
 
+import "alexandria/internal/common"
+
 type Tag struct {
 	ID          string `json:"id"`
 	DisplayName string `json:"display_name"`
@@ -7,16 +9,8 @@ type Tag struct {
 }
 
 type TaggedResource struct {
-	ID          string       `json:"-"`
-	ResourceID  string       `json:"id"`
-	DisplayName string       `json:"display_name"`
-	Type        ResourceType `json:"type"`
+	ID          string              `json:"-"`
+	ResourceID  string              `json:"id"`
+	DisplayName string              `json:"display_name"`
+	Type        common.ResourceType `json:"type"`
 }
-
-type ResourceType = string
-
-const (
-	BookResource  = "book"
-	PaperResource = "paper"
-	LinksResource = "link"
-)

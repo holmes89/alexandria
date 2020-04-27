@@ -1,6 +1,7 @@
 package papers
 
 import (
+	"alexandria/internal/common"
 	"alexandria/internal/documents"
 	"alexandria/internal/tags"
 	"context"
@@ -60,7 +61,7 @@ func (s *service) Add(ctx context.Context, file multipart.File, paper *documents
 }
 
 func (s *service) AddTag(id string, tag string) error {
-	return s.tagsRepo.AddResourceTag(id, tags.PaperResource, tag)
+	return s.tagsRepo.AddResourceTag(id, common.PaperResource, tag)
 }
 
 func (s *service) RemoveTag(id string, tag string) error {
