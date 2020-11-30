@@ -9,9 +9,3 @@ CREATE TABLE IF NOT EXISTS documents(
     created timestamp NOT NULL DEFAULT current_timestamp,
     updated timestamp NULL DEFAULT NULL
 );
-
-CREATE TABLE IF NOT EXISTS users (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    username VARCHAR(128) NOT NULL,
-    password VARCHAR(1024) NOT NULL
-);
